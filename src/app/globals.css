@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-canvas: #f5fbfb;
+    --bg-ice: #ebf7f7;
+    --bg-frost: #d8f1ef;
+    --accent-mint: #4fd4c4;
+    --accent-seafoam: #9ae6dc;
+    --accent-forest: #163f3b;
+    --text-ink: #182a2e;
+    --text-muted: #53696e;
+    --border-soft: #d4e9e7;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    color: var(--text-ink);
+    background-color: var(--bg-canvas);
+    background-image:
+      radial-gradient(circle at 12% 10%, rgba(154, 230, 220, 0.42) 0%, transparent 44%),
+      radial-gradient(circle at 88% 82%, rgba(79, 212, 196, 0.24) 0%, transparent 48%),
+      linear-gradient(145deg, #f8fcfc 0%, #ebf7f7 52%, #dff3f1 100%);
+    min-height: 100vh;
+  }
+}
+
+/* Smooth focus ring consistent with the Date² mint/forest palette */
+@layer utilities {
+  .auth-input-base {
+    @apply w-full rounded-xl border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-ink placeholder:text-brand-muted/65 transition-colors duration-150 focus:border-brand-mint focus:outline-none focus:ring-4 focus:ring-brand-mint/20 disabled:cursor-not-allowed disabled:bg-brand-ice/70 disabled:opacity-75;
+  }
+}
