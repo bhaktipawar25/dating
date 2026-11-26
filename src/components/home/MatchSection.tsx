@@ -32,8 +32,8 @@ export function MatchSection({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [swipeError, setSwipeError] = useState<string | null>(null);
   const [isSwiping, setIsSwiping] = useState(false);
+  const [showProfileDetails, setShowProfileDetails] = useState(false);
 
-  // Drag gesture state
   const [dragOffsetX, setDragOffsetX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartXRef = useRef<number | null>(null);
@@ -46,6 +46,7 @@ export function MatchSection({
     setLoading(true);
     setLoadError(null);
     setSwipeError(null);
+    setShowProfileDetails(false);
     try {
       const response = await matchService.getDeck(signal);
       setCandidates(response.candidates ?? []);
@@ -64,7 +65,7 @@ export function MatchSection({
 
   useEffect(() => {
     const controller = new AbortController();
-    loadDeck(controller.signal);
+    void loadDeck(controller.signal);
     return () => controller.abort();
   }, [loadDeck]);
 
@@ -76,7 +77,6 @@ export function MatchSection({
 
       setSwipeError(null);
       setIsSwiping(true);
-      // Animate exit slightly before removing
       setDragOffsetX(action === "LIKE" ? 160 : -160);
 
       try {
@@ -86,6 +86,7 @@ export function MatchSection({
         });
         setCandidates((prev) => prev.slice(1));
         setDragOffsetX(0);
+        setShowProfileDetails(false);
 
         if (result.matched) {
           onMatchConfirmed(result);
@@ -105,7 +106,6 @@ export function MatchSection({
     [currentCandidate, isSwiping, onMatchConfirmed]
   );
 
-  // Keyboard shortcuts (Left = Dislike, Right = Like), guarded against typing
   useEffect(() => {
     if (!isActive || matchModalData) return;
 
@@ -123,10 +123,10 @@ export function MatchSection({
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        handleSwipe("DISLIKE");
+        void handleSwipe("DISLIKE");
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        handleSwipe("LIKE");
+        void handleSwipe("LIKE");
       }
     };
 
@@ -152,9 +152,9 @@ export function MatchSection({
     dragStartXRef.current = null;
 
     if (dragOffsetX >= SWIPE_THRESHOLD_PX) {
-      handleSwipe("LIKE");
+      void handleSwipe("LIKE");
     } else if (dragOffsetX <= -SWIPE_THRESHOLD_PX) {
-      handleSwipe("DISLIKE");
+      void handleSwipe("DISLIKE");
     } else {
       setDragOffsetX(0);
     }
@@ -165,11 +165,11 @@ export function MatchSection({
   );
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <div className="mx-auto max-w-xl space-y-5 font-helvetica">
       {isMock && (
         <StatusBanner
           variant="info"
-          message="Showing sample profiles for local frontend testing. Connect the Date² backend for live match discovery."
+          message="Showing local sample profiles for UI testing. Connect the Date² backend for live match discovery."
         />
       )}
 
@@ -180,8 +180,8 @@ export function MatchSection({
           action={
             <button
               type="button"
-              onClick={() => loadDeck()}
-              className="text-xs font-semibold underline underline-offset-2"
+              onClick={() => void loadDeck()}
+              className="text-xs font-bold underline underline-offset-2"
             >
               Retry
             </button>
@@ -192,49 +192,49 @@ export function MatchSection({
       {swipeError && <StatusBanner variant="error" message={swipeError} />}
 
       {loading ? (
-        <div className="rounded-3xl border border-brand-border bg-white p-6 shadow-card space-y-4">
-          <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-brand-ice" />
-          <div className="h-6 w-40 animate-pulse rounded-lg bg-brand-ice" />
-          <div className="h-4 w-full animate-pulse rounded-lg bg-brand-canvas" />
+        <div className="space-y-4 rounded-[26px] border border-date2-border bg-date2-white p-6 shadow-indigoCard">
+          <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-date2-surface" />
+          <div className="h-6 w-40 animate-pulse rounded-lg bg-date2-lavenderMist" />
+          <div className="h-4 w-full animate-pulse rounded-lg bg-date2-canvas" />
           <div className="flex gap-2">
-            <div className="h-7 w-20 animate-pulse rounded-full bg-brand-ice" />
-            <div className="h-7 w-24 animate-pulse rounded-full bg-brand-ice" />
+            <div className="h-7 w-20 animate-pulse rounded-full bg-date2-lavenderMist" />
+            <div className="h-7 w-24 animate-pulse rounded-full bg-date2-lavenderMist" />
           </div>
         </div>
       ) : !currentCandidate ? (
-        <div className="rounded-3xl border border-brand-border bg-white p-8 text-center shadow-card space-y-4">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-ice text-brand-forest">
+        <div className="space-y-4 rounded-[26px] border border-date2-border bg-date2-white p-8 text-center shadow-indigoCard">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-date2-lavenderMist text-date2-deepIndigo">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
-              className="h-7 w-7"
+              className="h-8 w-8"
             >
               <path d="M12 20s-7-4.5-7-10a4.2 4.2 0 0 1 7-3.1A4.2 4.2 0 0 1 19 10c0 5.5-7 10-7 10Z" />
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-brand-ink">
-              You&apos;re caught up for now
+            <h2 className="text-xl font-bold text-date2-ink">
+              You&apos;ve seen everyone for now!
             </h2>
-            <p className="mt-1 text-sm text-brand-muted">
-              No more profiles are currently in your deck. Refresh to check for
-              new matches.
+            <p className="mt-1.5 text-sm leading-relaxed text-date2-slate">
+              Check back soon or refresh your discovery deck to explore more
+              compatible profiles.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => loadDeck()}
-            className="inline-flex items-center justify-center rounded-xl bg-brand-forest px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover"
+            onClick={() => void loadDeck()}
+            className="inline-flex h-[48px] items-center justify-center rounded-[14px] bg-date2-midnight px-6 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
           >
             Refresh Deck
           </button>
         </div>
       ) : (
         <div className="space-y-5">
-          {/* Interactive Draggable Candidate Card */}
+          {/* Interactive Draggable Candidate Profile Card */}
           <article
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -248,73 +248,94 @@ export function MatchSection({
                 ? "none"
                 : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
-            className="relative cursor-grab select-none touch-pan-y overflow-hidden rounded-3xl border border-brand-border bg-white shadow-card active:cursor-grabbing"
+            className="relative touch-pan-y select-none overflow-hidden rounded-[26px] border border-date2-border bg-date2-white shadow-indigoCard cursor-grab active:cursor-grabbing"
           >
-            {/* Drag Direction Overlay Pills */}
+            {/* Drag Direction Stamp Overlays */}
             {dragOffsetX > 35 && (
-              <div className="pointer-events-none absolute left-5 top-5 z-10 rounded-xl border-2 border-brand-mint bg-brand-forest/90 px-3 py-1 text-xs font-bold tracking-wider text-white">
+              <div className="pointer-events-none absolute left-5 top-5 z-10 rounded-xl border-2 border-date2-limeMark bg-date2-midnight/95 px-3.5 py-1 text-xs font-bold tracking-wider text-date2-limeMark">
                 LIKE
               </div>
             )}
             {dragOffsetX < -35 && (
-              <div className="pointer-events-none absolute right-5 top-5 z-10 rounded-xl border-2 border-rose-400 bg-rose-600/90 px-3 py-1 text-xs font-bold tracking-wider text-white">
+              <div className="pointer-events-none absolute right-5 top-5 z-10 rounded-xl border-2 border-rose-400 bg-rose-600/95 px-3.5 py-1 text-xs font-bold tracking-wider text-white">
                 PASS
               </div>
             )}
 
-            {/* Profile Photo or Clean Monogram Portrait */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-brand-ice via-brand-frost to-brand-seafoam/60">
+            {/* Profile Photo / Clean Portrait */}
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-date2-lavenderMist via-date2-paleLavender to-date2-softPeriwinkle/45">
               {currentCandidate.photoUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={currentCandidate.photoUrl}
                   alt={currentCandidate.name}
-                  className="h-full w-full object-cover pointer-events-none"
+                  className="pointer-events-none h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-brand-forest">
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/90 text-3xl font-bold shadow-soft">
+                <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-date2-midnight">
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-date2-white text-3xl font-bold shadow-indigoSoft">
                     {currentCandidate.name[0]?.toUpperCase() ?? "D"}
                   </span>
-                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-brand-muted">
-                    Profile Photo
+                  <span className="rounded-full bg-date2-white/90 px-3 py-1 text-xs font-bold text-date2-deepIndigo">
+                    Verified Date² Member
                   </span>
                 </div>
               )}
 
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-ink/80 via-brand-ink/35 to-transparent p-5 text-white">
-                <div className="flex items-baseline gap-2">
-                  <h2 className="text-2xl font-bold tracking-tight">
-                    {currentCandidate.name}
-                  </h2>
-                  {currentCandidate.age !== undefined && (
-                    <span className="text-xl font-medium opacity-95">
-                      {currentCandidate.age}
-                    </span>
-                  )}
-                </div>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-date2-ink/85 via-date2-ink/40 to-transparent p-5 text-date2-white">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <h2 className="text-2xl font-bold tracking-tight">
+                        {currentCandidate.name}
+                      </h2>
+                      {currentCandidate.age !== undefined && (
+                        <span className="text-xl font-normal opacity-95">
+                          {currentCandidate.age}
+                        </span>
+                      )}
+                    </div>
 
-                {(currentCandidate.location || currentCandidate.occupation) && (
-                  <p className="mt-0.5 text-xs font-medium text-white/90">
-                    {[currentCandidate.occupation, currentCandidate.location]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                )}
+                    {(currentCandidate.location ||
+                      currentCandidate.occupation) && (
+                      <p className="mt-0.5 text-xs font-bold text-date2-paleLavender">
+                        {[
+                          currentCandidate.occupation,
+                          currentCandidate.location,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => setShowProfileDetails((prev) => !prev)}
+                    className="shrink-0 rounded-full border border-date2-paleLavender/40 bg-date2-midnight/85 px-3 py-1.5 text-[11px] font-bold text-date2-white backdrop-blur-sm transition-colors hover:bg-date2-deepIndigo"
+                  >
+                    {showProfileDetails ? "Hide Info" : "Profile Info"}
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Card Body */}
             <div className="space-y-4 p-5 sm:p-6">
               {currentCandidate.bio && (
-                <p className="text-sm leading-relaxed text-brand-ink">
+                <p
+                  className={`text-sm leading-relaxed text-date2-charcoal ${
+                    showProfileDetails ? "" : "line-clamp-3"
+                  }`}
+                >
                   {currentCandidate.bio}
                 </p>
               )}
 
               {currentCandidate.interests.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.11em] text-date2-muted">
                     Interests
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -323,13 +344,20 @@ export function MatchSection({
                       return (
                         <span
                           key={interest}
-                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
                             isShared
-                              ? "bg-brand-forest text-white"
-                              : "border border-brand-border bg-brand-ice/75 text-brand-forest"
+                              ? "bg-date2-midnight text-date2-white"
+                              : "border border-date2-paleLavender bg-date2-lavenderMist text-date2-deepIndigo"
                           }`}
                         >
-                          {isShared && <span aria-hidden="true">★</span>}
+                          {isShared && (
+                            <span
+                              aria-hidden="true"
+                              className="text-date2-limeMark"
+                            >
+                              ★
+                            </span>
+                          )}
                           <span>{interest}</span>
                         </span>
                       );
@@ -337,17 +365,34 @@ export function MatchSection({
                   </div>
                 </div>
               )}
+
+              {showProfileDetails && (
+                <div className="grid grid-cols-2 gap-2.5 rounded-[16px] border border-date2-border bg-date2-surface p-3.5 text-xs">
+                  <div>
+                    <p className="font-bold text-date2-muted">Location</p>
+                    <p className="mt-0.5 font-bold text-date2-ink">
+                      {currentCandidate.location ?? "Nearby"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-date2-muted">Shared Vibes</p>
+                    <p className="mt-0.5 font-bold text-date2-deepIndigo">
+                      {currentCandidate.sharedInterests?.length ?? 0} interests
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </article>
 
           {/* Like / Dislike Controls + Keyboard Hint */}
-          <div className="flex items-center justify-center gap-5">
+          <div className="flex items-center justify-center gap-6">
             <button
               type="button"
               disabled={isSwiping}
               aria-label="Dislike profile (Left arrow)"
-              onClick={() => handleSwipe("DISLIKE")}
-              className="flex h-14 w-14 items-center justify-center rounded-full border border-brand-border bg-white text-rose-600 shadow-soft transition-all hover:scale-105 hover:border-rose-300 hover:bg-rose-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-200 disabled:opacity-50"
+              onClick={() => void handleSwipe("DISLIKE")}
+              className="flex h-14 w-14 items-center justify-center rounded-full border border-date2-border bg-date2-white text-rose-600 shadow-indigoSoft transition-all hover:scale-105 hover:border-rose-300 hover:bg-rose-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-200 disabled:opacity-50"
             >
               <svg
                 aria-hidden="true"
@@ -367,8 +412,8 @@ export function MatchSection({
               type="button"
               disabled={isSwiping}
               aria-label="Like profile (Right arrow)"
-              onClick={() => handleSwipe("LIKE")}
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-forest text-brand-mint shadow-card transition-all hover:scale-105 hover:bg-brand-forestHover focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/40 disabled:opacity-50"
+              onClick={() => void handleSwipe("LIKE")}
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-date2-midnight text-date2-limeMark shadow-indigoCard transition-all hover:scale-105 hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:opacity-50"
             >
               <svg
                 aria-hidden="true"
@@ -381,9 +426,16 @@ export function MatchSection({
             </button>
           </div>
 
-          <p className="text-center text-xs text-brand-muted">
-            Drag card or press <kbd className="rounded border border-brand-border bg-white px-1.5 py-0.5 text-[11px] font-semibold">←</kbd> to pass and{" "}
-            <kbd className="rounded border border-brand-border bg-white px-1.5 py-0.5 text-[11px] font-semibold">→</kbd> to like
+          <p className="text-center text-xs text-date2-slate">
+            Drag card or press{" "}
+            <kbd className="rounded border border-date2-border bg-date2-white px-1.5 py-0.5 text-[11px] font-bold text-date2-ink">
+              ←
+            </kbd>{" "}
+            to pass and{" "}
+            <kbd className="rounded border border-date2-border bg-date2-white px-1.5 py-0.5 text-[11px] font-bold text-date2-ink">
+              →
+            </kbd>{" "}
+            to like
           </p>
         </div>
       )}

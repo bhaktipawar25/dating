@@ -85,7 +85,7 @@ export function DocumentTypeSelector({
     <div
       role="radiogroup"
       aria-label="Government ID document type"
-      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+      className="grid grid-cols-1 gap-3 font-helvetica sm:grid-cols-2"
     >
       {options.map((doc) => {
         const isSelected = doc.id === selectedId;
@@ -97,17 +97,17 @@ export function DocumentTypeSelector({
             aria-checked={isSelected}
             disabled={disabled}
             onClick={() => onSelect(doc)}
-            className={`flex items-start gap-3.5 rounded-2xl border p-4 text-left transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/25 disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`flex items-start gap-3.5 rounded-[16px] border p-4 text-left transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60 ${
               isSelected
-                ? "border-brand-forest bg-brand-ice/80 shadow-soft"
-                : "border-brand-border bg-white hover:border-brand-mint hover:bg-brand-canvas"
+                ? "border-date2-violet bg-date2-lavenderMist/80 shadow-indigoSoft"
+                : "border-date2-border bg-date2-white hover:border-date2-lightPeriwinkle hover:bg-date2-canvas"
             }`}
           >
             <span
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
                 isSelected
-                  ? "bg-brand-forest text-white"
-                  : "bg-brand-ice text-brand-forest"
+                  ? "bg-date2-midnight text-date2-white"
+                  : "bg-date2-lavenderMist text-date2-deepIndigo"
               }`}
             >
               <DocumentIcon id={doc.id} />
@@ -115,14 +115,20 @@ export function DocumentTypeSelector({
 
             <span className="min-w-0 flex-1">
               <span className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-brand-ink">
+                <span className="text-sm font-bold text-date2-ink">
                   {doc.label}
                 </span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-brand-muted border border-brand-border/70">
-                  {doc.requiresBackSide ? "Front & back" : "Front only"}
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${
+                    doc.requiresBackSide
+                      ? "border-date2-border bg-date2-white text-date2-slate"
+                      : "border-date2-paleLavender bg-date2-white text-date2-deepIndigo"
+                  }`}
+                >
+                  {doc.requiresBackSide ? "Requires Front & Back" : "Front side only"}
                 </span>
               </span>
-              <span className="mt-1 block text-xs leading-relaxed text-brand-muted">
+              <span className="mt-1 block text-xs leading-relaxed text-date2-slate">
                 {doc.description}
               </span>
             </span>

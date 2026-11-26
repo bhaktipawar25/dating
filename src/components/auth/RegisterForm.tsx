@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AUTH_CONFIG } from "@/services/auth/endpoints";
 import { AuthServiceError, authService } from "@/services/auth/authService";
 import {
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  normalizeUsername,
   validateConfirmPassword,
   validateEmail,
   validateStrongPassword,
@@ -28,12 +32,14 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [errors, setErrors] = useState<{
     username?: string | null;
     email?: string | null;
     password?: string | null;
     confirmPassword?: string | null;
+    terms?: string | null;
   }>({});
   const [availability, setAvailability] = useState<UsernameAvailability>({
     status: "idle",
@@ -43,13 +49,13 @@ export function RegisterForm() {
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    const trimmed = username.trim();
-    const formatError = validateUsername(trimmed);
+  const runAvailabilityCheck = useCallback(async (rawUsername: string) => {
+    const clean = normalizeUsername(rawUsername);
+    const formatError = validateUsername(clean);
 
     abortControllerRef.current?.abort();
 
-    if (!trimmed || formatError) {
+    if (!clean || formatError) {
       setAvailability({ status: "idle" });
       return;
     }
@@ -58,57 +64,77 @@ export function RegisterForm() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const timer = setTimeout(async () => {
-      try {
-        const result = await authService.checkUsername(
-          trimmed,
-          controller.signal
-        );
-        if (controller.signal.aborted) return;
+    try {
+      const result = await authService.checkUsername(clean, controller.signal);
+      if (controller.signal.aborted) return;
 
-        if (result.available) {
-          setAvailability({
-            status: "available",
-            message: result.message ?? "Username is available.",
-          });
-        } else {
-          setAvailability({
-            status: "taken",
-            message: result.message ?? "This username is already taken.",
-          });
-        }
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") {
-          return;
-        }
+      if (result.available) {
         setAvailability({
-          status: "error",
-          message: "Could not verify username availability right now.",
+          status: "available",
+          message: "✓ Username available",
+        });
+      } else {
+        setAvailability({
+          status: "taken",
+          message: "✗ Username already taken. Try another.",
         });
       }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+      setAvailability({
+        status: "error",
+        message: "Network error checking handle. Tap retry.",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const clean = normalizeUsername(username);
+    const formatError = validateUsername(clean);
+
+    abortControllerRef.current?.abort();
+
+    if (!clean || formatError) {
+      setAvailability({ status: "idle" });
+      return;
+    }
+
+    setAvailability({ status: "checking" });
+    const timer = setTimeout(() => {
+      void runAvailabilityCheck(username);
     }, 350);
 
     return () => {
       clearTimeout(timer);
-      controller.abort();
+      abortControllerRef.current?.abort();
     };
-  }, [username]);
+  }, [username, runAvailabilityCheck]);
 
   const validateAll = (): boolean => {
     const usernameError = validateUsername(username);
-    const emailError = validateEmail(email);
+    const emailError = validateEmail(email, "Email is required");
     const passwordError = validateStrongPassword(password);
     const confirmError = validateConfirmPassword(password, confirmPassword);
+    const termsError = acceptedTerms
+      ? null
+      : "Please accept the Terms of Service & Affirming Guidelines.";
 
     setErrors({
       username: usernameError,
       email: emailError,
       password: passwordError,
       confirmPassword: confirmError,
+      terms: termsError,
     });
 
     return (
-      !usernameError && !emailError && !passwordError && !confirmError
+      !usernameError &&
+      !emailError &&
+      !passwordError &&
+      !confirmError &&
+      !termsError
     );
   };
 
@@ -121,6 +147,9 @@ export function RegisterForm() {
       return;
     }
 
+    const cleanUsername = normalizeUsername(username);
+    const cleanEmail = email.trim().toLowerCase();
+
     if (availability.status === "taken") {
       setErrors((prev) => ({
         ...prev,
@@ -131,11 +160,10 @@ export function RegisterForm() {
 
     setIsSubmitting(true);
     try {
-      // Ensure username availability was confirmed before registering
       if (availability.status === "idle" || availability.status === "checking") {
-        const check = await authService.checkUsername(username.trim());
+        const check = await authService.checkUsername(cleanUsername);
         if (!check.available) {
-          const takenMsg = check.message ?? "This username is already taken.";
+          const takenMsg = "✗ Username already taken. Try another.";
           setAvailability({ status: "taken", message: takenMsg });
           setErrors((prev) => ({ ...prev, username: takenMsg }));
           setIsSubmitting(false);
@@ -143,18 +171,18 @@ export function RegisterForm() {
         }
         setAvailability({
           status: "available",
-          message: check.message ?? "Username is available.",
+          message: "✓ Username available",
         });
       }
 
       const result = await authService.register({
-        username: username.trim(),
-        email: email.trim(),
+        username: cleanUsername,
+        email: cleanEmail,
         password,
       });
 
-      const targetEmail = encodeURIComponent(result.email || email.trim());
-      router.push(`/verify-email?email=${targetEmail}`);
+      const targetEmail = encodeURIComponent(result.email || cleanEmail);
+      router.push(`/verify-email?email=${targetEmail}&created=1`);
     } catch (err) {
       if (err instanceof AuthServiceError) {
         setFormError(err.message);
@@ -173,34 +201,48 @@ export function RegisterForm() {
     }
   };
 
-  const renderAvailabilityBadge = () => {
+  const normalized = normalizeUsername(username);
+  const showNormalizedPreview =
+    username.trim().length > 0 && normalized !== username.trim();
+
+  const renderUsernameAccessory = () => {
     if (errors.username) return null;
 
     if (availability.status === "checking") {
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-muted">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-date2-slate">
           <span
             aria-hidden="true"
-            className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-brand-mint border-t-transparent"
+            className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-date2-indigo border-t-transparent"
           />
-          Checking...
+          Checking availability...
         </span>
       );
     }
 
     if (availability.status === "available") {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-brand-ice px-2 py-0.5 text-xs font-semibold text-brand-forest">
-          ✓ Available
+        <span className="rounded-full bg-date2-lavenderMist px-2.5 py-0.5 text-xs font-bold text-date2-deepIndigo">
+          ✓ Username available
         </span>
       );
     }
 
     if (availability.status === "taken") {
       return (
-        <span className="text-xs font-semibold text-rose-600">
-          Already taken
-        </span>
+        <span className="text-xs font-bold text-rose-600">Already taken</span>
+      );
+    }
+
+    if (availability.status === "error") {
+      return (
+        <button
+          type="button"
+          onClick={() => void runAvailabilityCheck(username)}
+          className="text-xs font-bold text-date2-deepIndigo underline hover:text-date2-violet"
+        >
+          Retry
+        </button>
       );
     }
 
@@ -211,8 +253,18 @@ export function RegisterForm() {
     errors.username ??
     (availability.status === "taken" ? availability.message : null);
 
+  const showMockNotice =
+    AUTH_CONFIG.mode === "mock" && process.env.NODE_ENV !== "production";
+
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit} noValidate className="space-y-4 font-helvetica">
+      {showMockNotice && (
+        <StatusBanner
+          variant="info"
+          message="Frontend Demo Mode: Accounts use mock local auth until backend endpoints go live."
+        />
+      )}
+
       {formError && <StatusBanner variant="error" message={formError} />}
 
       <FormField
@@ -223,16 +275,16 @@ export function RegisterForm() {
         hint={
           availability.status === "error"
             ? availability.message
-            : "3–20 characters. Start with a letter; letters, numbers, and underscores only."
+            : `${USERNAME_MIN_LENGTH}–${USERNAME_MAX_LENGTH} chars: lowercase letters, numbers & _`
         }
-        rightAccessory={renderAvailabilityBadge()}
+        rightAccessory={renderUsernameAccessory()}
       >
         <input
           id="register-username"
           name="username"
           type="text"
           autoComplete="username"
-          placeholder="alex_morgan"
+          placeholder="e.g. ananya_24"
           value={username}
           disabled={isSubmitting}
           aria-invalid={Boolean(usernameErrorText)}
@@ -257,46 +309,55 @@ export function RegisterForm() {
               username: validateUsername(username),
             }))
           }
-          className={`auth-input-base ${
+          className={`date2-input-base ${
             usernameErrorText
               ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
               : availability.status === "available"
-                ? "border-brand-mint"
+                ? "border-date2-indigo"
                 : ""
           }`}
         />
+
+        {showNormalizedPreview && !usernameErrorText && (
+          <p className="pt-1 text-xs font-bold text-date2-deepIndigo">
+            Normalized: @{normalized}
+          </p>
+        )}
       </FormField>
 
       <FormField
         id="register-email"
-        label="Email address"
+        label="Email Address"
         required
         error={errors.email}
-        hint="We will send a 6-digit SMTP verification code to this address."
       >
         <input
           id="register-email"
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="alex@example.com"
+          placeholder="your.name@example.com"
           value={email}
           disabled={isSubmitting}
           aria-invalid={Boolean(errors.email)}
-          aria-describedby={
-            errors.email ? "register-email-error" : "register-email-hint"
-          }
+          aria-describedby={errors.email ? "register-email-error" : undefined}
           onChange={(e) => {
             const next = e.target.value;
             setEmail(next);
             if (errors.email) {
-              setErrors((prev) => ({ ...prev, email: validateEmail(next) }));
+              setErrors((prev) => ({
+                ...prev,
+                email: validateEmail(next, "Email is required"),
+              }));
             }
           }}
           onBlur={() =>
-            setErrors((prev) => ({ ...prev, email: validateEmail(email) }))
+            setErrors((prev) => ({
+              ...prev,
+              email: validateEmail(email, "Email is required"),
+            }))
           }
-          className={`auth-input-base ${
+          className={`date2-input-base ${
             errors.email
               ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
               : ""
@@ -315,7 +376,7 @@ export function RegisterForm() {
           name="password"
           value={password}
           autoComplete="new-password"
-          placeholder="Create a strong password"
+          placeholder="Enter a strong password"
           disabled={isSubmitting}
           hasError={Boolean(errors.password)}
           describedBy={errors.password ? "register-password-error" : undefined}
@@ -341,7 +402,7 @@ export function RegisterForm() {
 
       <FormField
         id="register-confirm-password"
-        label="Confirm password"
+        label="Confirm Password"
         required
         error={errors.confirmPassword}
       >
@@ -379,12 +440,37 @@ export function RegisterForm() {
         />
       </FormField>
 
+      {/* Terms Acceptance Checkbox matching Flutter */}
+      <div className="space-y-1 pt-1">
+        <label className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-date2-border bg-date2-canvas px-3.5 py-3 text-xs leading-relaxed text-date2-charcoal">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            disabled={isSubmitting}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setAcceptedTerms(checked);
+              if (checked && errors.terms) {
+                setErrors((prev) => ({ ...prev, terms: null }));
+              }
+            }}
+            className="mt-0.5 h-4 w-4 rounded border-date2-softBorder text-date2-midnight focus:ring-date2-violet"
+          />
+          <span>I accept the Terms of Service &amp; Affirming Guidelines.</span>
+        </label>
+        {errors.terms && (
+          <p role="alert" className="text-xs font-bold text-rose-600">
+            {errors.terms}
+          </p>
+        )}
+      </div>
+
       <div className="pt-1">
         <SubmitButton
           isLoading={isSubmitting}
-          loadingText="Creating account..."
+          loadingText="Creating Account..."
         >
-          Create account
+          Create Account
         </SubmitButton>
       </div>
     </form>

@@ -13,7 +13,7 @@ export default function SecurityStatusPage() {
     <OnboardingGuard requiredStage="security-check">
       <SecurityLayout
         title="Verification Status"
-        subtitle="Track the status of your face scan and government ID submission."
+        subtitle="Track live updates for your Face Scan and Government ID verification."
       >
         <SecurityStatusView />
       </SecurityLayout>

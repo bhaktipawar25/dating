@@ -2,6 +2,9 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Date2Logo } from "@/components/auth/Date2Logo";
+import { ProfileAccountMenu } from "@/components/auth/ProfileAccountMenu";
+import { registerLogoutCleanup } from "@/lib/auth/sessionCleanup";
 import type { AuthUser } from "@/services/auth/types";
 import {
   ChatServiceError,
@@ -11,11 +14,20 @@ import {
   type ChatMessage,
   type ChatSocketConnection,
   type ChatStreamEvent,
+  type DatePlanChatPayload,
 } from "@/services/chat/chatService";
+import { clearMockEphemeralMessages } from "@/services/chat/mockChatService";
 import { ChatSection } from "./ChatSection";
 import { GameSection } from "./GameSection";
 import { MatchSection } from "./MatchSection";
-import { ProfileAvatar } from "./ProfileAvatar";
+import {
+  IncomingCallPrompt,
+  type IncomingCallData,
+} from "./workspace/IncomingCallPrompt";
+import {
+  VideoCallOverlay,
+  type ActiveVcCall,
+} from "./workspace/VideoCallOverlay";
 
 type DashboardTab = "match" | "chat" | "game";
 
@@ -68,12 +80,33 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
     Record<string, string | null>
   >({});
 
+  // Feature 5: Vanish Mode & Video Call State
+  const [vanishToggling, setVanishToggling] = useState(false);
+  const [vanishError, setVanishError] = useState<string | null>(null);
+
+  const [startingCall, setStartingCall] = useState(false);
+  const [callError, setCallError] = useState<string | null>(null);
+  const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(
+    null
+  );
+  const [incomingCallBusy, setIncomingCallBusy] = useState(false);
+  const [activeCall, setActiveCall] = useState<ActiveVcCall | null>(null);
+  const [vcSignal, setVcSignal] = useState<{
+    signalType: "offer" | "answer" | "ice_candidate" | "ended" | "declined";
+    sdp?: RTCSessionDescriptionInit;
+    candidate?: RTCIceCandidateInit;
+  } | null>(null);
+
   const socketRef = useRef<ChatSocketConnection | null>(null);
   const selectedConvRef = useRef<string | null>(null);
+  const conversationsRef = useRef<ChatConversation[]>([]);
+  conversationsRef.current = conversations;
   const activeTabRef = useRef<DashboardTab>(activeTab);
+  const activeCallRef = useRef<ActiveVcCall | null>(null);
 
   selectedConvRef.current = selectedConversationId;
   activeTabRef.current = activeTab;
+  activeCallRef.current = activeCall;
 
   const loadConversations = useCallback(async (signal?: AbortSignal) => {
     setLoadingConversations(true);
@@ -120,8 +153,10 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           return {
             ...conv,
             messages: mergeIncomingMessage(conv.messages ?? [], msg),
-            lastMessage: msg.content,
-            lastMessageAt: msg.createdAt ?? conv.lastMessageAt,
+            lastMessage: msg.isEphemeral ? conv.lastMessage : msg.content,
+            lastMessageAt: msg.isEphemeral
+              ? conv.lastMessageAt
+              : msg.createdAt ?? conv.lastMessageAt,
             unreadCount: isCurrentlyViewing ? 0 : conv.unreadCount + 1,
           };
         });
@@ -164,6 +199,45 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           c.id === event.conversationId ? { ...c, unreadCount: 0 } : c
         )
       );
+      return;
+    }
+
+    if (event.type === "vanish_mode") {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === event.conversationId
+            ? {
+                ...c,
+                vanishEnabled: event.enabled,
+                messages: event.enabled
+                  ? c.messages
+                  : (c.messages ?? []).filter((m) => !m.isEphemeral),
+              }
+            : c
+        )
+      );
+      return;
+    }
+
+    if (event.type === "vc_incoming") {
+      if (!activeCallRef.current) {
+        setIncomingCall({
+          callId: event.callId,
+          conversationId: event.conversationId,
+          callerId: event.callerId,
+          callerName: event.callerName,
+          callerPhotoUrl: event.callerPhotoUrl,
+        });
+      }
+      return;
+    }
+
+    if (event.type === "vc_signal") {
+      setVcSignal({
+        signalType: event.signalType,
+        sdp: event.sdp,
+        candidate: event.candidate,
+      });
     }
   }, []);
 
@@ -176,24 +250,54 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
       onEvent: handleStreamEvent,
     });
 
+    const unregisterLogout = registerLogoutCleanup(() => {
+      socketRef.current?.close();
+      socketRef.current = null;
+      clearMockEphemeralMessages();
+      setActiveCall(null);
+      setIncomingCall(null);
+      setConversations([]);
+      setSelectedConversationId(null);
+    });
+
     return () => {
+      unregisterLogout();
       controller.abort();
       socketRef.current?.close();
     };
   }, [loadConversations, handleStreamEvent]);
 
   const handleSelectConversation = useCallback((conversationId: string) => {
+    setVanishError(null);
+    setCallError(null);
     setSelectedConversationId(conversationId);
     setConversations((prev) =>
-      prev.map((c) =>
-        c.id === conversationId ? { ...c, unreadCount: 0 } : c
-      )
+      prev.map((c) => {
+        if (c.id === conversationId) {
+          return { ...c, unreadCount: 0 };
+        }
+        // Clear ephemeral messages from conversations when exiting them
+        return c.vanishEnabled
+          ? {
+              ...c,
+              messages: (c.messages ?? []).filter((m) => !m.isEphemeral),
+            }
+          : c;
+      })
     );
     socketRef.current?.markRead(conversationId);
   }, []);
 
   const handleSendMessage = useCallback(
-    (conversationId: string, content: string): boolean => {
+    (
+      conversationId: string,
+      content: string,
+      options?: {
+        isEphemeral?: boolean;
+        type?: "text" | "date_plan";
+        datePlan?: DatePlanChatPayload;
+      }
+    ): boolean => {
       const clientMessageId = `client-${Date.now()}-${Math.random()
         .toString(36)
         .slice(2, 7)}`;
@@ -204,7 +308,9 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
         conversationId,
         senderId: currentUserId,
         content,
-        type: "text",
+        type: options?.type ?? "text",
+        datePlan: options?.datePlan,
+        isEphemeral: Boolean(options?.isEphemeral),
         createdAt: new Date().toISOString(),
         status: "sending",
       };
@@ -214,6 +320,9 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           conversationId,
           content,
           clientMessageId,
+          isEphemeral: options?.isEphemeral,
+          type: options?.type,
+          datePlan: options?.datePlan,
         }) ?? false;
 
       setConversations((prev) =>
@@ -225,8 +334,14 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                   ...(c.messages ?? []),
                   { ...optimistic, status: sent ? "sending" : "failed" },
                 ],
-                lastMessage: content,
-                lastMessageAt: optimistic.createdAt,
+                lastMessage: options?.isEphemeral
+                  ? c.lastMessage
+                  : options?.type === "date_plan" && options.datePlan
+                    ? `Shared date plan: ${options.datePlan.planTitle}`
+                    : content,
+                lastMessageAt: options?.isEphemeral
+                  ? c.lastMessageAt
+                  : optimistic.createdAt,
               }
             : c
         )
@@ -236,6 +351,197 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
     },
     [currentUserId]
   );
+
+  const handleRetryMessage = useCallback(
+    (conversationId: string, clientMessageId: string) => {
+      const targetConv = conversationsRef.current.find(
+        (c) => c.id === conversationId
+      );
+      const targetMsg = targetConv?.messages?.find(
+        (m) => m.clientMessageId === clientMessageId
+      );
+      if (!targetMsg) return false;
+
+      const sent =
+        socketRef.current?.sendMessage({
+          conversationId,
+          content: targetMsg.content,
+          clientMessageId,
+          isEphemeral: targetMsg.isEphemeral,
+          type: targetMsg.type === "date_plan" ? "date_plan" : "text",
+          datePlan: targetMsg.datePlan,
+        }) ?? false;
+
+      if (sent) {
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  messages: (c.messages ?? []).map((m) =>
+                    m.clientMessageId === clientMessageId
+                      ? { ...m, status: "sending" }
+                      : m
+                  ),
+                }
+              : c
+          )
+        );
+      }
+
+      return sent;
+    },
+    []
+  );
+
+  const handleToggleVanishMode = async (
+    conversationId: string,
+    nextEnabled: boolean
+  ) => {
+    if (vanishToggling) return;
+    setVanishToggling(true);
+    setVanishError(null);
+    try {
+      const res = await chatService.toggleVanishMode(
+        conversationId,
+        nextEnabled
+      );
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === conversationId
+            ? {
+                ...c,
+                vanishEnabled: res.vanishEnabled,
+                messages: res.vanishEnabled
+                  ? c.messages
+                  : (c.messages ?? []).filter((m) => !m.isEphemeral),
+              }
+            : c
+        )
+      );
+    } catch (err) {
+      setVanishError(
+        err instanceof ChatServiceError
+          ? err.message
+          : "Unable to toggle Vanish Mode right now."
+      );
+    } finally {
+      setVanishToggling(false);
+    }
+  };
+
+  const handleStartVideoCall = async (conversation: ChatConversation) => {
+    if (startingCall || activeCall) return;
+    setStartingCall(true);
+    setCallError(null);
+    setVcSignal(null);
+
+    try {
+      const res = await chatService.sendVcRequest(conversation.id, {
+        action: "initiate",
+      });
+
+      setActiveCall({
+        callId: res.callId,
+        conversationId: conversation.id,
+        partnerName: conversation.participant.name,
+        partnerPhotoUrl: conversation.participant.photoUrl,
+        direction: "outgoing",
+        iceServers: res.iceServers,
+        isMock: res.isMockResponse,
+      });
+    } catch (err) {
+      setCallError(
+        err instanceof ChatServiceError
+          ? err.message
+          : "Unable to initiate video call."
+      );
+    } finally {
+      setStartingCall(false);
+    }
+  };
+
+  const handleAcceptIncomingCall = async (call: IncomingCallData) => {
+    if (incomingCallBusy) return;
+    setIncomingCallBusy(true);
+    setCallError(null);
+    setVcSignal(null);
+
+    try {
+      const res = await chatService.sendVcRequest(call.conversationId, {
+        action: "accept",
+        callId: call.callId,
+      });
+      setIncomingCall(null);
+      setActiveCall({
+        callId: res.callId || call.callId,
+        conversationId: call.conversationId,
+        partnerName: call.callerName,
+        partnerPhotoUrl: call.callerPhotoUrl,
+        direction: "incoming",
+        iceServers: res.iceServers,
+        isMock: res.isMockResponse,
+      });
+    } catch (err) {
+      setCallError(
+        err instanceof ChatServiceError
+          ? err.message
+          : "Unable to accept incoming video call."
+      );
+      setIncomingCall(null);
+    } finally {
+      setIncomingCallBusy(false);
+    }
+  };
+
+  const handleDeclineIncomingCall = async (call: IncomingCallData) => {
+    if (incomingCallBusy) return;
+    setIncomingCallBusy(true);
+    try {
+      await chatService.sendVcRequest(call.conversationId, {
+        action: "decline",
+        callId: call.callId,
+      });
+      socketRef.current?.sendVcSignal({
+        conversationId: call.conversationId,
+        callId: call.callId,
+        signalType: "declined",
+      });
+    } catch {
+      // Dismiss prompt safely
+    } finally {
+      setIncomingCall(null);
+      setIncomingCallBusy(false);
+    }
+  };
+
+  const handleEndCall = async (call: ActiveVcCall) => {
+    setActiveCall(null);
+    setVcSignal(null);
+    try {
+      socketRef.current?.sendVcSignal({
+        conversationId: call.conversationId,
+        callId: call.callId,
+        signalType: "ended",
+      });
+      await chatService.sendVcRequest(call.conversationId, {
+        action: "end",
+        callId: call.callId,
+      });
+    } catch {
+      // Local media already stopped & cleaned up
+    }
+  };
+
+  const handleBlockAndEnd = async (call: ActiveVcCall) => {
+    await handleEndCall(call);
+    setConversations((prev) =>
+      prev.filter((c) => c.id !== call.conversationId)
+    );
+    if (selectedConversationId === call.conversationId) {
+      setSelectedConversationId(null);
+    }
+  };
 
   const totalUnread = useMemo(
     () => conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0),
@@ -249,40 +555,21 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
   ];
 
   return (
-    <div className="relative flex min-h-screen flex-col pb-20 sm:pb-8">
+    <div className="date2-auth-backdrop relative flex min-h-screen flex-col pb-20 font-helvetica text-date2-ink sm:pb-8">
       {/* Persistent Date² Dashboard Header */}
-      <header className="sticky top-0 z-30 border-b border-brand-border/80 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-date2-border bg-date2-white/95 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10">
           <Link
             href="/home"
-            className="inline-flex items-center gap-2.5 rounded-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/30"
+            className="inline-flex items-center rounded-xl py-0.5 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
           >
-            <span
-              aria-hidden="true"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-forest text-white shadow-soft"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 20s-7-4.5-7-10a4.2 4.2 0 0 1 7-3.1A4.2 4.2 0 0 1 19 10c0 5.5-7 10-7 10Z" />
-                <circle cx="12" cy="10" r="1.5" fill="#4FD4C4" stroke="none" />
-              </svg>
-            </span>
-            <span className="text-xl font-bold tracking-tight text-brand-ink">
-              Date<span className="text-brand-mint">²</span>
-            </span>
+            <Date2Logo height={24} showContainer={false} />
           </Link>
 
           {/* Desktop & Tablet Primary Navigation */}
           <nav
             aria-label="Dashboard sections"
-            className="hidden items-center gap-1 rounded-2xl border border-brand-border bg-brand-canvas p-1 sm:flex"
+            className="hidden items-center gap-1 rounded-2xl border border-date2-border bg-date2-canvas p-1 sm:flex"
           >
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
@@ -299,8 +586,8 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                   }}
                   className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
                     isActive
-                      ? "bg-brand-forest text-white shadow-sm"
-                      : "text-brand-muted hover:bg-brand-ice hover:text-brand-forest"
+                      ? "bg-date2-midnight text-date2-white shadow-sm"
+                      : "text-date2-slate hover:bg-date2-lavenderMist hover:text-date2-midnight"
                   }`}
                 >
                   <span>{tab.label}</span>
@@ -308,8 +595,8 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                     <span
                       className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
                         isActive
-                          ? "bg-brand-mint text-brand-forest"
-                          : "bg-brand-forest text-white"
+                          ? "bg-date2-limeMark text-date2-midnight"
+                          : "bg-date2-midnight text-date2-white"
                       }`}
                     >
                       {tab.badge}
@@ -320,19 +607,8 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
             })}
           </nav>
 
-          {/* User Profile Quick Access */}
-          <div className="flex items-center gap-2.5">
-            <Link
-              href="/onboarding/personal-info"
-              title="Edit your personal information and interests"
-              className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-white py-1 pl-1 pr-3 text-xs font-semibold text-brand-ink transition-colors hover:bg-brand-ice"
-            >
-              <ProfileAvatar name={user?.username ?? "Date²"} size="sm" />
-              <span className="hidden md:inline">
-                {user?.username ? `@${user.username}` : "Profile"}
-              </span>
-            </Link>
-          </div>
+          {/* User Profile & Logout Menu */}
+          <ProfileAccountMenu username={user?.username} theme="date2" />
         </div>
       </header>
 
@@ -368,6 +644,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
             isMock={isChatMock}
             onRetryLoad={() => loadConversations()}
             onSendMessage={handleSendMessage}
+            onRetryMessage={handleRetryMessage}
             onTypingChange={(convId, typing) =>
               socketRef.current?.sendTyping({
                 conversationId: convId,
@@ -378,6 +655,24 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
               setSelectedConversationId(convId);
               setActiveTab("game");
             }}
+            onToggleVanishMode={handleToggleVanishMode}
+            vanishToggling={vanishToggling}
+            vanishError={vanishError}
+            onStartVideoCall={handleStartVideoCall}
+            onSimulateIncomingCall={
+              isChatMock
+                ? (conv) =>
+                    setIncomingCall({
+                      callId: `mock-incoming-${Date.now()}`,
+                      conversationId: conv.id,
+                      callerId: conv.participant.id,
+                      callerName: conv.participant.name,
+                      callerPhotoUrl: conv.participant.photoUrl,
+                    })
+                : undefined
+            }
+            startingCall={startingCall}
+            callError={callError}
           />
         </div>
 
@@ -402,7 +697,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
       {/* Responsive Mobile Bottom Navigation */}
       <nav
         aria-label="Mobile dashboard sections"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-brand-border bg-white/95 px-4 py-2 backdrop-blur-md sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-date2-border bg-date2-white/95 px-4 py-2 backdrop-blur-md sm:hidden"
       >
         <div className="mx-auto grid max-w-md grid-cols-3 gap-2">
           {tabs.map((tab) => {
@@ -420,13 +715,13 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                 }}
                 className={`relative flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold transition-colors ${
                   isActive
-                    ? "bg-brand-forest text-white"
-                    : "text-brand-muted hover:bg-brand-ice"
+                    ? "bg-date2-midnight text-date2-white"
+                    : "text-date2-slate hover:bg-date2-lavenderMist"
                 }`}
               >
                 <span>{tab.label}</span>
                 {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-mint px-1 text-[10px] font-bold text-brand-forest">
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-date2-limeMark px-1 text-[10px] font-bold text-date2-midnight">
                     {tab.badge}
                   </span>
                 )}
@@ -435,6 +730,25 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           })}
         </div>
       </nav>
+
+      {/* Incoming Call Consent Modal */}
+      <IncomingCallPrompt
+        call={incomingCall}
+        busy={incomingCallBusy}
+        onAccept={handleAcceptIncomingCall}
+        onDecline={handleDeclineIncomingCall}
+      />
+
+      {/* Active WebRTC Video Call Overlay */}
+      {activeCall && (
+        <VideoCallOverlay
+          call={activeCall}
+          chatSocket={socketRef.current}
+          incomingSignal={vcSignal}
+          onEndCall={handleEndCall}
+          onBlockAndEnd={handleBlockAndEnd}
+        />
+      )}
     </div>
   );
 }

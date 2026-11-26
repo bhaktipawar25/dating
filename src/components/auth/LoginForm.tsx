@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AuthServiceError,
   authService,
-  type AuthUser,
 } from "@/services/auth/authService";
 import { profileService } from "@/services/profile/profileService";
 import { securityService } from "@/services/security/securityService";
@@ -20,13 +20,16 @@ import { SubmitButton } from "./SubmitButton";
 
 interface LoginFormProps {
   verifiedNotice?: boolean;
+  postSignupNotice?: boolean;
   prefilledIdentifier?: string;
 }
 
 export function LoginForm({
   verifiedNotice = false,
+  postSignupNotice = false,
   prefilledIdentifier = "",
 }: LoginFormProps) {
+  const router = useRouter();
   const [identifier, setIdentifier] = useState(prefilledIdentifier);
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{
@@ -36,18 +39,9 @@ export function LoginForm({
   const [formError, setFormError] = useState<{
     message: string;
     code?: string;
+    resolvedEmail?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authenticatedUser, setAuthenticatedUser] = useState<AuthUser | null>(
-    null
-  );
-  const [nextDestination, setNextDestination] = useState<{
-    href: string;
-    label: string;
-  }>({
-    href: "/security-check",
-    label: "Continue to Security Check",
-  });
 
   const validateAll = (): boolean => {
     const identifierError = validateLoginIdentifier(identifier);
@@ -72,30 +66,41 @@ export function LoginForm({
 
     setIsSubmitting(true);
     try {
-      const response = await authService.login({ identifier, password });
+      await authService.login({ identifier, password });
+
+      let destination = "/security-check";
       try {
         const kyc = await securityService.getKycStatus();
         if (kyc.overallStatus === "VERIFIED") {
           const profile = await profileService.getPersonalInfo();
-          if (profile?.profileCompleted) {
-            setNextDestination({
-              href: "/home",
-              label: "Continue to Home",
-            });
-          } else {
-            setNextDestination({
-              href: "/onboarding/personal-info",
-              label: "Continue to Personal Information",
-            });
-          }
+          destination = profile?.profileCompleted
+            ? "/home"
+            : "/onboarding/personal-info";
         }
       } catch {
-        // Default to /security-check if status probe fails
+        destination = "/security-check";
       }
-      setAuthenticatedUser(response.user);
+
+      router.push(destination);
     } catch (err) {
       if (err instanceof AuthServiceError) {
-        setFormError({ message: err.message, code: err.code });
+        if (err.code === "EMAIL_NOT_VERIFIED") {
+          const targetEmail =
+            err.fieldErrors?.resolvedEmail ??
+            (identifier.includes("@") ? identifier.trim().toLowerCase() : "");
+          if (targetEmail) {
+            router.push(
+              `/verify-email?email=${encodeURIComponent(targetEmail)}`
+            );
+            return;
+          }
+        }
+
+        setFormError({
+          message: err.message,
+          code: err.code,
+          resolvedEmail: err.fieldErrors?.resolvedEmail,
+        });
         if (err.fieldErrors) {
           setErrors((prev) => ({
             ...prev,
@@ -108,66 +113,23 @@ export function LoginForm({
           message: "Unable to sign in right now. Please try again.",
         });
       }
-    } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (authenticatedUser) {
-    return (
-      <div className="space-y-5">
-        <StatusBanner
-          variant="success"
-          title="Welcome back"
-          message={`Signed in as ${authenticatedUser.username} (${authenticatedUser.email}).`}
-        />
-
-        <div className="rounded-2xl border border-brand-border bg-brand-ice/60 p-4 text-sm">
-          <dl className="space-y-2">
-            <div className="flex items-center justify-between">
-              <dt className="text-brand-muted">Username</dt>
-              <dd className="font-semibold text-brand-ink">
-                @{authenticatedUser.username}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-brand-muted">Email</dt>
-              <dd className="font-medium text-brand-ink">
-                {authenticatedUser.email}
-              </dd>
-            </div>
-          </dl>
-        </div>
-
-        <div className="space-y-3">
-          <Link
-            href={nextDestination.href}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-brand-forest px-4 py-3 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/35"
-          >
-            {nextDestination.label}
-          </Link>
-
-          <SubmitButton
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setAuthenticatedUser(null);
-              setPassword("");
-            }}
-          >
-            Switch account
-          </SubmitButton>
-        </div>
-      </div>
-    );
-  }
 
   const verifyEmailHref = identifier.includes("@")
     ? `/verify-email?email=${encodeURIComponent(identifier.trim())}`
     : "/verify-email";
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5 font-helvetica">
+      {postSignupNotice && (
+        <StatusBanner
+          variant="info"
+          message="Account created! Log in with your credentials to trigger your 6-digit Email OTP verification."
+        />
+      )}
+
       {verifiedNotice && (
         <StatusBanner
           variant="success"
@@ -182,8 +144,14 @@ export function LoginForm({
           action={
             formError.code === "EMAIL_NOT_VERIFIED" ? (
               <Link
-                href={verifyEmailHref}
-                className="inline-flex text-xs font-semibold text-rose-900 underline underline-offset-2 hover:text-rose-700"
+                href={
+                  formError.resolvedEmail
+                    ? `/verify-email?email=${encodeURIComponent(
+                        formError.resolvedEmail
+                      )}`
+                    : verifyEmailHref
+                }
+                className="inline-flex text-xs font-bold text-rose-900 underline underline-offset-2 hover:text-rose-700"
               >
                 Verify your email →
               </Link>
@@ -194,7 +162,7 @@ export function LoginForm({
 
       <FormField
         id="login-identifier"
-        label="Username or Email Address"
+        label="Username or Email"
         required
         error={errors.identifier}
       >
@@ -203,7 +171,7 @@ export function LoginForm({
           name="identifier"
           type="text"
           autoComplete="username"
-          placeholder="Enter your username or email"
+          placeholder="e.g. ananya_24 or name@example.com"
           value={identifier}
           disabled={isSubmitting}
           aria-invalid={Boolean(errors.identifier)}
@@ -226,7 +194,7 @@ export function LoginForm({
               identifier: validateLoginIdentifier(identifier),
             }))
           }
-          className={`auth-input-base ${
+          className={`date2-input-base ${
             errors.identifier
               ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
               : ""
@@ -242,9 +210,9 @@ export function LoginForm({
         rightAccessory={
           <Link
             href="/forgot-password"
-            className="text-xs font-semibold text-brand-forest transition-colors hover:text-brand-mintHover hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mint"
+            className="text-xs font-bold text-date2-deepIndigo transition-colors hover:text-date2-violet hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet"
           >
-            Forgot password?
+            Forgot Password?
           </Link>
         }
       >
@@ -275,8 +243,8 @@ export function LoginForm({
         />
       </FormField>
 
-      <SubmitButton isLoading={isSubmitting} loadingText="Logging in...">
-        Log in
+      <SubmitButton isLoading={isSubmitting} loadingText="Authenticating...">
+        Log In
       </SubmitButton>
     </form>
   );

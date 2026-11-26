@@ -1,26 +1,35 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AUTH_CONFIG } from "@/services/auth/endpoints";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 
 export const metadata: Metadata = {
-  title: "Forgot Password",
-  description: "Reset your Date² account password.",
+  title: "Reset Password",
+  description: "Request a 6-digit password reset code for your Date² account.",
 };
 
 export default function ForgotPasswordPage() {
+  const isMockDev =
+    AUTH_CONFIG.mode === "mock" && process.env.NODE_ENV !== "production";
+
+  const subtitle = isMockDev
+    ? "Enter your registered email address to request a 6-digit password reset code (Demo Mode — no real email is sent)."
+    : "Enter your registered email address to request a 6-digit password reset code.";
+
   return (
     <AuthLayout
-      title="Forgot your password?"
-      subtitle="Enter your email address and we will send password reset instructions."
+      title="Reset Password"
+      subtitle={subtitle}
+      backHref="/login"
       footer={
         <p>
-          Remembered your password?{" "}
+          Remember password?{" "}
           <Link
             href="/login"
-            className="font-semibold text-brand-forest transition-colors hover:text-brand-mintHover hover:underline"
+            className="font-bold text-date2-deepIndigo transition-colors hover:text-date2-violet hover:underline"
           >
-            Back to login
+            Log In
           </Link>
         </p>
       }

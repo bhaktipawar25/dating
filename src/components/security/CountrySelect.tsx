@@ -66,7 +66,7 @@ export function CountrySelect({
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative font-helvetica">
       <button
         id={id}
         type="button"
@@ -74,13 +74,19 @@ export function CountrySelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className={`auth-input-base flex items-center justify-between text-left ${
+        className={`date2-input-base flex items-center justify-between text-left ${
           error
             ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
             : ""
         }`}
       >
-        <span className={selectedCountry ? "text-brand-ink" : "text-brand-muted/70"}>
+        <span
+          className={
+            selectedCountry
+              ? "font-bold text-date2-ink"
+              : "text-date2-muted"
+          }
+        >
           {selectedCountry
             ? `${selectedCountry.name} (${selectedCountry.code})`
             : "Select issuing country"}
@@ -89,7 +95,7 @@ export function CountrySelect({
           aria-hidden="true"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className={`h-4 w-4 text-brand-muted transition-transform ${
+          className={`h-4 w-4 text-date2-muted transition-transform ${
             open ? "rotate-180" : ""
           }`}
         >
@@ -102,7 +108,7 @@ export function CountrySelect({
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-2 w-full rounded-2xl border border-brand-border bg-white p-2 shadow-card">
+        <div className="absolute z-30 mt-2 w-full rounded-[18px] border border-date2-border bg-date2-white p-2.5 shadow-indigoCard">
           <div className="pb-2">
             <input
               ref={searchInputRef}
@@ -111,17 +117,17 @@ export function CountrySelect({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search country or ISO code..."
               aria-label="Search issuing country"
-              className="auth-input-base py-2 text-xs"
+              className="date2-input-base py-2 text-xs"
             />
           </div>
 
           <ul
             role="listbox"
             aria-label="Issuing countries"
-            className="max-h-56 overflow-y-auto divide-y divide-brand-border/40"
+            className="max-h-56 divide-y divide-date2-border/60 overflow-y-auto"
           >
             {filteredCountries.length === 0 ? (
-              <li className="px-3 py-3 text-center text-xs text-brand-muted">
+              <li className="px-3 py-3 text-center text-xs text-date2-muted">
                 No matching country found.
               </li>
             ) : (
@@ -138,12 +144,12 @@ export function CountrySelect({
                       }}
                       className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors ${
                         isSelected
-                          ? "bg-brand-ice font-semibold text-brand-forest"
-                          : "text-brand-ink hover:bg-brand-canvas"
+                          ? "bg-date2-lavenderMist font-bold text-date2-midnight"
+                          : "text-date2-ink hover:bg-date2-canvas"
                       }`}
                     >
                       <span>{country.name}</span>
-                      <span className="rounded-md bg-brand-ice px-1.5 py-0.5 text-[11px] font-semibold text-brand-forest">
+                      <span className="rounded-md bg-date2-surface px-1.5 py-0.5 text-[11px] font-bold text-date2-deepIndigo">
                         {country.code}
                       </span>
                     </button>

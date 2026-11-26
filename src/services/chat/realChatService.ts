@@ -10,6 +10,9 @@ import {
   type ChatSocketHandlers,
   type ChatStreamEvent,
   type GetConversationsResponse,
+  type VanishToggleResponse,
+  type VcRequestPayload,
+  type VcRequestResponse,
 } from "./types";
 
 function buildChatWebSocketUrl(): string {
@@ -28,7 +31,9 @@ function buildChatWebSocketUrl(): string {
   return CHAT_ENDPOINTS.stream;
 }
 
-function normalizeServerEvent(raw: Record<string, unknown>): ChatStreamEvent | null {
+function normalizeServerEvent(
+  raw: Record<string, unknown>
+): ChatStreamEvent | null {
   const eventType = String(raw.type ?? raw.event ?? "").toLowerCase();
 
   if (eventType === "message" || eventType === "chat.message") {
@@ -74,7 +79,74 @@ function normalizeServerEvent(raw: Record<string, unknown>): ChatStreamEvent | n
     };
   }
 
+  if (eventType === "vanish_mode" || eventType === "chat.vanish_mode") {
+    return {
+      type: "vanish_mode",
+      conversationId: String(raw.conversationId ?? ""),
+      enabled: Boolean(raw.enabled ?? raw.vanishEnabled),
+    };
+  }
+
+  if (eventType === "vc_incoming" || eventType === "chat.vc_incoming") {
+    return {
+      type: "vc_incoming",
+      conversationId: String(raw.conversationId ?? ""),
+      callId: String(raw.callId ?? ""),
+      callerId: String(raw.callerId ?? ""),
+      callerName: String(raw.callerName ?? "Match"),
+      callerPhotoUrl: raw.callerPhotoUrl
+        ? String(raw.callerPhotoUrl)
+        : undefined,
+    };
+  }
+
+  if (
+    eventType === "vc_signal" ||
+    eventType === "vc_offer" ||
+    eventType === "vc_answer" ||
+    eventType === "vc_ice_candidate" ||
+    eventType === "vc_ended" ||
+    eventType === "vc_declined"
+  ) {
+    const signalType =
+      eventType === "vc_signal"
+        ? (String(raw.signalType ?? "ended") as
+            | "offer"
+            | "answer"
+            | "ice_candidate"
+            | "ended"
+            | "declined")
+        : (eventType.replace("vc_", "") as
+            | "offer"
+            | "answer"
+            | "ice_candidate"
+            | "ended"
+            | "declined");
+
+    return {
+      type: "vc_signal",
+      conversationId: String(raw.conversationId ?? ""),
+      callId: String(raw.callId ?? ""),
+      signalType,
+      sdp: raw.sdp as RTCSessionDescriptionInit | undefined,
+      candidate: raw.candidate as RTCIceCandidateInit | undefined,
+    };
+  }
+
   return null;
+}
+
+function mapChatError(err: unknown, fallback: string): ChatServiceError {
+  if (err instanceof AuthServiceError) {
+    return new ChatServiceError(err.message, {
+      status: err.status,
+      code: err.code,
+    });
+  }
+  return new ChatServiceError(fallback, {
+    status: 0,
+    code: "CHAT_REQUEST_ERROR",
+  });
 }
 
 export const realChatService: ChatService = {
@@ -95,16 +167,44 @@ export const realChatService: ChatService = {
       if (err instanceof DOMException && err.name === "AbortError") {
         throw err;
       }
-      if (err instanceof AuthServiceError) {
-        throw new ChatServiceError(err.message, {
-          status: err.status,
-          code: err.code,
-        });
-      }
-      throw new ChatServiceError(
-        "Unable to load conversations right now.",
-        { status: 0, code: "CHAT_LOAD_ERROR" }
+      throw mapChatError(err, "Unable to load conversations right now.");
+    }
+  },
+
+  async toggleVanishMode(
+    conversationId: string,
+    enabled: boolean
+  ): Promise<VanishToggleResponse> {
+    try {
+      return await authHttpRequest<VanishToggleResponse>(
+        CHAT_ENDPOINTS.vanishToggle(conversationId),
+        {
+          method: "POST",
+          body: { enabled },
+        }
       );
+    } catch (err) {
+      throw mapChatError(
+        err,
+        "Unable to update Vanish Mode setting right now."
+      );
+    }
+  },
+
+  async sendVcRequest(
+    conversationId: string,
+    payload: VcRequestPayload
+  ): Promise<VcRequestResponse> {
+    try {
+      return await authHttpRequest<VcRequestResponse>(
+        CHAT_ENDPOINTS.vcRequest(conversationId),
+        {
+          method: "POST",
+          body: payload,
+        }
+      );
+    } catch (err) {
+      throw mapChatError(err, "Unable to process video call request.");
     }
   },
 
@@ -189,6 +289,11 @@ export const realChatService: ChatService = {
           conversationId: payload.conversationId,
         });
       },
+      sendVcSignal: (payload) =>
+        safeSend({
+          type: "vc_signal",
+          ...payload,
+        }),
       markRead: (conversationId) => {
         safeSend({
           type: "mark_read",

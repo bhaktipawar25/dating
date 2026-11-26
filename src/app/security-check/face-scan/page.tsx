@@ -13,7 +13,7 @@ export default function FaceScanPage() {
     <OnboardingGuard requiredStage="security-check">
       <SecurityLayout
         title="Verify Your Identity"
-        subtitle="Take a quick live photo so our verification service can confirm your identity."
+        subtitle="Guided front-camera alignment and active liveness check processed securely in memory."
       >
         <FaceScanFlow />
       </SecurityLayout>

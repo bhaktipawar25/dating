@@ -4,13 +4,14 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 
 export const metadata: Metadata = {
-  title: "Reset Password",
-  description: "Set a new password for your Date² account.",
+  title: "Set New Password",
+  description: "Create a strong, unique password for your Date² account.",
 };
 
 interface ResetPasswordPageProps {
   searchParams: Promise<{
     token?: string;
+    email?: string;
   }>;
 }
 
@@ -19,24 +20,33 @@ export default async function ResetPasswordPage({
 }: ResetPasswordPageProps) {
   const params = await searchParams;
   const initialToken = typeof params.token === "string" ? params.token : "";
+  const targetEmail = typeof params.email === "string" ? params.email : "";
+
+  const subtitle = targetEmail
+    ? `Create a strong, unique password for ${targetEmail}.`
+    : "Create a strong, unique password for your Date² account.";
 
   return (
     <AuthLayout
-      title="Set a new password"
-      subtitle="Choose a strong password you haven't used previously."
+      title="Set New Password"
+      subtitle={subtitle}
+      backHref="/login"
       footer={
         <p>
-          Need a fresh reset link?{" "}
+          Need a fresh reset code?{" "}
           <Link
             href="/forgot-password"
-            className="font-semibold text-brand-forest transition-colors hover:text-brand-mintHover hover:underline"
+            className="font-bold text-date2-deepIndigo transition-colors hover:text-date2-violet hover:underline"
           >
-            Request reset email
+            Request Verification Code
           </Link>
         </p>
       }
     >
-      <ResetPasswordForm initialToken={initialToken} />
+      <ResetPasswordForm
+        initialToken={initialToken}
+        targetEmail={targetEmail}
+      />
     </AuthLayout>
   );
 }

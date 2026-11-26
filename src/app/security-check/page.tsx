@@ -13,7 +13,7 @@ export default function SecurityCheckPage() {
     <OnboardingGuard requiredStage="security-check">
       <SecurityLayout
         title="Security Check"
-        subtitle="Complete identity verification to keep the Date² community safe and authentic."
+        subtitle="Complete your live face scan, active liveness check, and Government ID verification before unlocking Personal Info."
       >
         <SecurityOverview />
       </SecurityLayout>

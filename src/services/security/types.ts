@@ -8,14 +8,18 @@ export type KycOverallStatus =
   | "DOCUMENT_SUBMITTED"
   | "VERIFICATION_PENDING"
   | "VERIFIED"
-  | "VERIFICATION_FAILED";
+  | "VERIFICATION_FAILED"
+  | "REJECTED"
+  | "RETRY_REQUIRED";
 
 export type StepVerificationStatus =
   | "NOT_STARTED"
   | "SUBMITTED"
   | "PENDING"
   | "VERIFIED"
-  | "FAILED";
+  | "FAILED"
+  | "REJECTED"
+  | "RETRY_REQUIRED";
 
 export interface FaceScanSubmitRequest {
   imageBlob: Blob;
@@ -36,6 +40,7 @@ export interface DocumentVerifyRequest {
   documentType: DocumentTypeId;
   frontFile: File;
   backFile?: File | null;
+  documentReference?: string;
   onProgress?: (percent: number) => void;
 }
 

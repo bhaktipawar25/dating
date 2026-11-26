@@ -3,10 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Sign In | Date²",
+    default: "Date² — Date Smart • Connect Meaningfully",
     template: "%s | Date²",
   },
-  description: "Sign in or create your Date² account.",
+  description:
+    "Inclusive Romance & Verified Companionship. Sign in or create your Date² account.",
 };
 
 export default function RootLayout({
@@ -16,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen font-sans text-brand-ink antialiased selection:bg-brand-seafoam/60 selection:text-brand-forest">
+      <body className="min-h-screen font-sans text-brand-ink antialiased selection:bg-date2-paleLavender selection:text-date2-midnight">
         {children}
       </body>
     </html>

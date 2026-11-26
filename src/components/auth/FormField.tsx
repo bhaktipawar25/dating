@@ -22,11 +22,11 @@ export function FormField({
   children,
 }: FormFieldProps) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 font-helvetica">
       <div className="flex items-center justify-between gap-2">
         <label
           htmlFor={id}
-          className="block text-sm font-medium text-brand-ink"
+          className="block text-[11px] font-bold uppercase tracking-[0.11em] text-date2-charcoal"
         >
           {label}
           {required && (
@@ -44,7 +44,7 @@ export function FormField({
         <p
           id={`${id}-error`}
           role="alert"
-          className="flex items-start gap-1.5 text-xs font-medium text-rose-600"
+          className="flex items-start gap-1.5 text-xs font-bold text-rose-600"
         >
           <svg
             aria-hidden="true"
@@ -61,7 +61,7 @@ export function FormField({
           <span>{error}</span>
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="text-xs text-brand-muted">
+        <p id={`${id}-hint`} className="text-xs text-date2-muted">
           {hint}
         </p>
       ) : null}

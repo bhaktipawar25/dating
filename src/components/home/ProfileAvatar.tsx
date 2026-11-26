@@ -27,7 +27,7 @@ export function ProfileAvatar({
       <img
         src={photoUrl}
         alt={name}
-        className={`${SIZE_CLASSES[size]} shrink-0 rounded-full border border-brand-border object-cover bg-brand-ice`}
+        className={`${SIZE_CLASSES[size]} shrink-0 rounded-full border border-date2-border bg-date2-lavenderMist object-cover`}
       />
     );
   }
@@ -35,7 +35,7 @@ export function ProfileAvatar({
   return (
     <span
       aria-hidden="true"
-      className={`${SIZE_CLASSES[size]} inline-flex shrink-0 items-center justify-center rounded-full border border-brand-border bg-brand-ice font-bold text-brand-forest`}
+      className={`${SIZE_CLASSES[size]} inline-flex shrink-0 items-center justify-center rounded-full border border-date2-paleLavender bg-date2-lavenderMist font-helvetica font-bold text-date2-midnight`}
     >
       {initial}
     </span>

@@ -89,38 +89,37 @@ export function InterestSelectionSection({
   };
 
   return (
-    <section aria-labelledby="interests-section-heading" className="space-y-5">
+    <section
+      aria-labelledby="interests-section-heading"
+      className="space-y-5 font-helvetica"
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2
             id="interests-section-heading"
-            className="text-xl font-bold tracking-tight text-brand-ink sm:text-2xl"
+            className="text-2xl font-bold tracking-tight text-date2-ink sm:text-[26px]"
           >
             What Do You Like?
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-brand-muted">
-            Choose your favourite activities and interests to help us find
-            people who share your vibe.
+          <p className="mt-1 text-sm leading-relaxed text-date2-slate">
+            Search and choose your favourite lifestyle topics so Date² can
+            highlight what you share in common.
           </p>
         </div>
 
-        <span className="inline-flex w-fit items-center rounded-full border border-brand-border bg-brand-ice px-3 py-1 text-xs font-semibold text-brand-forest">
+        <span className="inline-flex w-fit items-center rounded-full border border-date2-paleLavender bg-date2-lavenderMist px-3 py-1 text-xs font-bold text-date2-midnight">
           {selectedInterestIds.length} selected
         </span>
       </div>
 
-      {/* Search & Category Tabs */}
+      {/* Search Bar (with Clear Search option) & Category Filter Tabs */}
       <div className="space-y-3">
         <div className="relative">
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-brand-muted"
+            className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-date2-muted"
           >
-            <svg
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="h-4 w-4"
-            >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
               <path
                 fillRule="evenodd"
                 d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
@@ -135,8 +134,17 @@ export function InterestSelectionSection({
             placeholder="Search interests (e.g. Coffee, Travelling, Cricket)..."
             aria-label="Search interests"
             disabled={disabled || loading}
-            className="auth-input-base pl-10"
+            className="date2-input-base pl-10 pr-20"
           />
+          {searchQuery.trim().length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute inset-y-1.5 right-1.5 rounded-lg border border-date2-border bg-date2-surface px-2.5 text-xs font-bold text-date2-deepIndigo hover:bg-date2-lavenderMist"
+            >
+              Clear
+            </button>
+          )}
         </div>
 
         {categories.length > 0 && (
@@ -150,10 +158,10 @@ export function InterestSelectionSection({
               role="tab"
               aria-selected={activeCategoryId === "all"}
               onClick={() => setActiveCategoryId("all")}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
                 activeCategoryId === "all"
-                  ? "bg-brand-forest text-white shadow-sm"
-                  : "border border-brand-border bg-white text-brand-muted hover:bg-brand-ice hover:text-brand-forest"
+                  ? "bg-date2-midnight text-date2-white shadow-sm"
+                  : "border border-date2-border bg-date2-white text-date2-slate hover:bg-date2-lavenderMist hover:text-date2-midnight"
               }`}
             >
               All
@@ -167,10 +175,10 @@ export function InterestSelectionSection({
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setActiveCategoryId(category.id)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
                     isActive
-                      ? "bg-brand-forest text-white shadow-sm"
-                      : "border border-brand-border bg-white text-brand-muted hover:bg-brand-ice hover:text-brand-forest"
+                      ? "bg-date2-midnight text-date2-white shadow-sm"
+                      : "border border-date2-border bg-date2-white text-date2-slate hover:bg-date2-lavenderMist hover:text-date2-midnight"
                   }`}
                 >
                   {category.name}
@@ -181,7 +189,7 @@ export function InterestSelectionSection({
         )}
       </div>
 
-      {/* Categories & Interest Pills */}
+      {/* Categorized Pills */}
       {loadError ? (
         <StatusBanner
           variant="error"
@@ -190,39 +198,51 @@ export function InterestSelectionSection({
             <button
               type="button"
               onClick={onRetryLoad}
-              className="text-xs font-semibold underline underline-offset-2"
+              className="text-xs font-bold underline underline-offset-2"
             >
               Retry loading interests
             </button>
           }
         />
       ) : loading ? (
-        <div className="space-y-3 rounded-2xl border border-brand-border bg-brand-canvas p-5">
-          <p className="text-xs font-medium text-brand-muted">
+        <div className="space-y-3 rounded-[16px] border border-date2-border bg-date2-canvas p-5">
+          <p className="text-xs font-bold text-date2-deepIndigo">
             Loading interest categories...
           </p>
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="h-8 w-24 animate-pulse rounded-full bg-brand-ice"
+                className="h-8 w-24 animate-pulse rounded-full bg-date2-lavenderMist"
               />
             ))}
           </div>
         </div>
       ) : filteredCategories.length === 0 ? (
-        <div className="rounded-2xl border border-brand-border bg-brand-canvas p-6 text-center text-sm text-brand-muted">
-          No interests match &ldquo;{searchQuery}&rdquo;. Try another keyword or
-          switch category.
+        <div className="space-y-3 rounded-[16px] border border-date2-border bg-date2-canvas p-6 text-center text-sm text-date2-slate">
+          <p>
+            No interests match &ldquo;{searchQuery}&rdquo;. Try another keyword
+            or switch category.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setActiveCategoryId("all");
+            }}
+            className="rounded-xl border border-date2-softBorder bg-date2-white px-4 py-2 text-xs font-bold text-date2-deepIndigo hover:border-date2-violet hover:bg-date2-lavenderMist"
+          >
+            Clear search &amp; show all
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
           {filteredCategories.map((category) => (
             <div
               key={category.id}
-              className="rounded-2xl border border-brand-border/80 bg-brand-canvas/65 p-4 space-y-2.5"
+              className="space-y-2.5 rounded-[16px] border border-date2-border bg-date2-canvas p-4"
             >
-              <h3 className="text-xs font-bold uppercase tracking-wider text-brand-forest">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.11em] text-date2-deepIndigo">
                 {category.name}
               </h3>
 
@@ -236,14 +256,21 @@ export function InterestSelectionSection({
                       aria-pressed={isSelected}
                       disabled={disabled}
                       onClick={() => toggleInterest(tag.id)}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mint disabled:cursor-not-allowed disabled:opacity-60 ${
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet disabled:cursor-not-allowed disabled:opacity-60 ${
                         isSelected
-                          ? "border-brand-forest bg-brand-forest text-white shadow-sm"
-                          : "border-brand-border bg-white text-brand-ink hover:border-brand-mint hover:bg-brand-ice"
+                          ? "border-date2-midnight bg-date2-midnight text-date2-white shadow-sm"
+                          : "border-date2-border bg-date2-white text-date2-ink hover:border-date2-violet hover:bg-date2-lavenderMist"
                       }`}
                     >
                       <span>{tag.label}</span>
-                      <span aria-hidden="true" className="text-[11px]">
+                      <span
+                        aria-hidden="true"
+                        className={`text-[11px] ${
+                          isSelected
+                            ? "text-date2-limeMark"
+                            : "text-date2-deepIndigo"
+                        }`}
+                      >
                         {isSelected ? "✓" : "+"}
                       </span>
                     </button>
@@ -256,20 +283,20 @@ export function InterestSelectionSection({
       )}
 
       {validationError && (
-        <p role="alert" className="text-xs font-medium text-rose-600">
+        <p role="alert" className="text-xs font-bold text-rose-600">
           {validationError}
         </p>
       )}
 
-      {/* Selected Interests Preview & Ordering */}
-      <div className="rounded-2xl border border-brand-border bg-brand-ice/55 p-4 space-y-3">
+      {/* Selected Interests Preview & Reordering */}
+      <div className="space-y-3 rounded-[18px] border border-date2-border bg-date2-surface p-4">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-bold text-brand-ink">
+            <h3 className="text-sm font-bold text-date2-ink">
               Selected Interests ({selectedInterestIds.length})
             </h3>
-            <p className="text-xs text-brand-muted">
-              Drag and drop or use the arrow buttons to arrange your favourites.
+            <p className="text-xs text-date2-slate">
+              Drag and drop or use the arrow buttons to reorder your favourites.
             </p>
           </div>
 
@@ -278,7 +305,7 @@ export function InterestSelectionSection({
               type="button"
               disabled={disabled}
               onClick={() => onChangeSelected([])}
-              className="rounded-lg border border-brand-border bg-white px-2.5 py-1 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-50 disabled:opacity-50"
+              className="rounded-lg border border-date2-softBorder bg-date2-white px-2.5 py-1 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-50 disabled:opacity-50"
             >
               Clear all
             </button>
@@ -286,8 +313,8 @@ export function InterestSelectionSection({
         </div>
 
         {selectedInterestIds.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-brand-border bg-white/70 px-4 py-3 text-xs text-brand-muted">
-            Select interests above to build your ranked list.
+          <p className="rounded-xl border border-dashed border-date2-softBorder bg-date2-white px-4 py-3 text-xs text-date2-slate">
+            Select interests above to build your ordered list.
           </p>
         ) : (
           <ul className="space-y-2" aria-label="Ordered selected interests">
@@ -306,35 +333,35 @@ export function InterestSelectionSection({
                     }
                   }}
                   onDragEnd={() => setDraggedIndex(null)}
-                  className={`flex items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-xs shadow-sm transition-colors ${
+                  className={`flex items-center justify-between gap-2 rounded-xl border bg-date2-white px-3 py-2 text-xs shadow-sm transition-colors ${
                     draggedIndex === index
-                      ? "border-brand-mint opacity-70"
-                      : "border-brand-border"
+                      ? "border-date2-violet opacity-70"
+                      : "border-date2-border"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex min-w-0 items-center gap-2.5">
                     <span
                       aria-hidden="true"
-                      className="cursor-grab text-brand-muted select-none"
+                      className="cursor-grab select-none text-date2-muted"
                       title="Drag to reorder"
                     >
                       ⋮⋮
                     </span>
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-ice text-[11px] font-bold text-brand-forest">
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-date2-lavenderMist text-[11px] font-bold text-date2-midnight">
                       {index + 1}
                     </span>
-                    <span className="truncate font-semibold text-brand-ink">
+                    <span className="truncate font-bold text-date2-ink">
                       {label}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex shrink-0 items-center gap-1">
                     <button
                       type="button"
                       disabled={disabled || index === 0}
                       aria-label={`Move ${label} up`}
                       onClick={() => moveInterest(index, index - 1)}
-                      className="rounded-lg border border-brand-border px-2 py-1 text-[11px] font-semibold text-brand-forest hover:bg-brand-ice disabled:opacity-35"
+                      className="rounded-lg border border-date2-border px-2 py-1 text-[11px] font-bold text-date2-deepIndigo hover:bg-date2-lavenderMist disabled:opacity-35"
                     >
                       ↑
                     </button>
@@ -345,7 +372,7 @@ export function InterestSelectionSection({
                       }
                       aria-label={`Move ${label} down`}
                       onClick={() => moveInterest(index, index + 1)}
-                      className="rounded-lg border border-brand-border px-2 py-1 text-[11px] font-semibold text-brand-forest hover:bg-brand-ice disabled:opacity-35"
+                      className="rounded-lg border border-date2-border px-2 py-1 text-[11px] font-bold text-date2-deepIndigo hover:bg-date2-lavenderMist disabled:opacity-35"
                     >
                       ↓
                     </button>
@@ -354,7 +381,7 @@ export function InterestSelectionSection({
                       disabled={disabled}
                       aria-label={`Remove ${label}`}
                       onClick={() => removeInterest(tagId)}
-                      className="rounded-lg border border-rose-200 px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-35"
+                      className="rounded-lg border border-rose-200 px-2 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-35"
                     >
                       ×
                     </button>

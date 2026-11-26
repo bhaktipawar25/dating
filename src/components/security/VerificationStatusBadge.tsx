@@ -17,8 +17,8 @@ interface StatusMeta {
 const STATUS_META: Record<AnyStatus, StatusMeta> = {
   NOT_STARTED: {
     label: "Not Started",
-    classes: "border-brand-border bg-brand-canvas text-brand-muted",
-    dotColor: "bg-brand-muted/60",
+    classes: "border-date2-border bg-date2-canvas text-date2-slate",
+    dotColor: "bg-date2-muted",
   },
   CAMERA_PERMISSION_REQUIRED: {
     label: "Camera Permission Required",
@@ -27,33 +27,33 @@ const STATUS_META: Record<AnyStatus, StatusMeta> = {
   },
   FACE_SCAN_SUBMITTED: {
     label: "Face Scan Submitted",
-    classes: "border-brand-mint/60 bg-brand-ice text-brand-forest",
-    dotColor: "bg-brand-mint",
+    classes: "border-date2-paleLavender bg-date2-lavenderMist text-date2-deepIndigo",
+    dotColor: "bg-date2-violet",
   },
   DOCUMENT_SUBMITTED: {
     label: "Document Submitted",
-    classes: "border-brand-mint/60 bg-brand-ice text-brand-forest",
-    dotColor: "bg-brand-mint",
+    classes: "border-date2-paleLavender bg-date2-lavenderMist text-date2-deepIndigo",
+    dotColor: "bg-date2-violet",
   },
   SUBMITTED: {
     label: "Submitted",
-    classes: "border-brand-mint/60 bg-brand-ice text-brand-forest",
-    dotColor: "bg-brand-mint",
+    classes: "border-date2-paleLavender bg-date2-lavenderMist text-date2-deepIndigo",
+    dotColor: "bg-date2-violet",
   },
   VERIFICATION_PENDING: {
     label: "Verification Pending",
-    classes: "border-brand-seafoam bg-brand-ice text-brand-forest",
-    dotColor: "bg-brand-mint",
+    classes: "border-date2-lightPeriwinkle bg-date2-lavenderMist text-date2-midnight",
+    dotColor: "bg-date2-indigo",
   },
   PENDING: {
     label: "Verification Pending",
-    classes: "border-brand-seafoam bg-brand-ice text-brand-forest",
-    dotColor: "bg-brand-mint",
+    classes: "border-date2-lightPeriwinkle bg-date2-lavenderMist text-date2-midnight",
+    dotColor: "bg-date2-indigo",
   },
   VERIFIED: {
     label: "Verified",
-    classes: "border-brand-forest/30 bg-brand-forest text-white",
-    dotColor: "bg-brand-mint",
+    classes: "border-date2-midnight bg-date2-midnight text-date2-white",
+    dotColor: "bg-date2-limeMark",
   },
   VERIFICATION_FAILED: {
     label: "Verification Failed",
@@ -64,6 +64,16 @@ const STATUS_META: Record<AnyStatus, StatusMeta> = {
     label: "Verification Failed",
     classes: "border-rose-200 bg-rose-50 text-rose-800",
     dotColor: "bg-rose-600",
+  },
+  REJECTED: {
+    label: "Rejected",
+    classes: "border-rose-200 bg-rose-50 text-rose-800",
+    dotColor: "bg-rose-600",
+  },
+  RETRY_REQUIRED: {
+    label: "Retry Required",
+    classes: "border-amber-200 bg-amber-50 text-amber-900",
+    dotColor: "bg-amber-600",
   },
 };
 
@@ -78,14 +88,14 @@ export function VerificationStatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${meta.classes}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-helvetica text-xs font-bold ${meta.classes}`}
     >
       {status === "VERIFIED" ? (
         <svg
           aria-hidden="true"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className="h-3.5 w-3.5 text-brand-mint"
+          className="h-3.5 w-3.5 text-date2-limeMark"
         >
           <path
             fillRule="evenodd"
@@ -93,7 +103,9 @@ export function VerificationStatusBadge({
             clipRule="evenodd"
           />
         </svg>
-      ) : status === "VERIFICATION_FAILED" || status === "FAILED" ? (
+      ) : status === "VERIFICATION_FAILED" ||
+        status === "FAILED" ||
+        status === "REJECTED" ? (
         <svg
           aria-hidden="true"
           viewBox="0 0 20 20"

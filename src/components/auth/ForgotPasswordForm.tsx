@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AuthServiceError, authService } from "@/services/auth/authService";
 import { validateEmail } from "@/lib/validation/authValidation";
 import { FormField } from "./FormField";
@@ -8,104 +9,73 @@ import { StatusBanner } from "./StatusBanner";
 import { SubmitButton } from "./SubmitButton";
 
 export function ForgotPasswordForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [confirmation, setConfirmation] = useState<{
-    message: string;
-    email: string;
-    mockResetToken?: string;
-  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSubmitting) return;
 
     setFormError(null);
-    const err = validateEmail(email);
+    const err = validateEmail(email, "Please enter your registered email");
     setEmailError(err);
     if (err) return;
 
+    const cleanEmail = email.trim().toLowerCase();
     setIsSubmitting(true);
     try {
-      const response = await authService.forgotPassword({
-        email: email.trim(),
-      });
-      setConfirmation(response);
+      await authService.forgotPassword({ email: cleanEmail });
+      router.push(
+        `/verify-email?mode=reset&email=${encodeURIComponent(cleanEmail)}`
+      );
     } catch (error) {
       if (error instanceof AuthServiceError) {
         setFormError(error.message);
       } else {
-        setFormError(
-          "Unable to send reset instructions right now. Please try again."
-        );
+        setFormError("Unable to dispatch code. Verify email or try again.");
       }
-    } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (confirmation) {
-    return (
-      <div className="space-y-5">
-        <StatusBanner
-          variant="success"
-          title="Check your inbox"
-          message={confirmation.message}
-        />
-
-        <div className="rounded-2xl border border-brand-border bg-brand-ice/70 p-4 text-sm text-brand-ink">
-          <p className="text-xs font-medium text-brand-muted">
-            Instructions requested for
-          </p>
-          <p className="mt-0.5 font-semibold">{confirmation.email}</p>
-        </div>
-
-        <SubmitButton
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            setConfirmation(null);
-            setFormError(null);
-          }}
-        >
-          Try another email address
-        </SubmitButton>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5 font-helvetica">
       {formError && <StatusBanner variant="error" message={formError} />}
 
       <FormField
         id="forgot-email"
-        label="Email address"
+        label="Registered Email"
         required
         error={emailError}
-        hint="Enter the email address associated with your account."
       >
         <input
           id="forgot-email"
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="alex@example.com"
+          placeholder="your.name@example.com"
           value={email}
           disabled={isSubmitting}
           aria-invalid={Boolean(emailError)}
-          aria-describedby={
-            emailError ? "forgot-email-error" : "forgot-email-hint"
-          }
+          aria-describedby={emailError ? "forgot-email-error" : undefined}
           onChange={(e) => {
             const next = e.target.value;
             setEmail(next);
-            if (emailError) setEmailError(validateEmail(next));
+            if (emailError) {
+              setEmailError(
+                validateEmail(next, "Please enter your registered email")
+              );
+            }
           }}
-          onBlur={() => setEmailError(validateEmail(email))}
-          className={`auth-input-base ${
+          onBlur={() =>
+            setEmailError(
+              validateEmail(email, "Please enter your registered email")
+            )
+          }
+          className={`date2-input-base ${
             emailError
               ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
               : ""
@@ -113,11 +83,8 @@ export function ForgotPasswordForm() {
         />
       </FormField>
 
-      <SubmitButton
-        isLoading={isSubmitting}
-        loadingText="Sending instructions..."
-      >
-        Send reset instructions
+      <SubmitButton isLoading={isSubmitting} loadingText="Sending Code...">
+        Send Verification Code
       </SubmitButton>
     </form>
   );

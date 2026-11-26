@@ -13,7 +13,7 @@ export default function DocumentVerificationPage() {
     <OnboardingGuard requiredStage="security-check">
       <SecurityLayout
         title="Government ID Verification"
-        subtitle="Select your issuing country and upload a clear photo or PDF of your official ID."
+        subtitle="Select your issuing country, choose an eligible document, and upload or capture clear ID images."
       >
         <DocumentVerificationFlow />
       </SecurityLayout>

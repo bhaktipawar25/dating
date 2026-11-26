@@ -97,6 +97,7 @@ export const realAuthService: AuthService = {
       body: {
         email: payload.email.trim().toLowerCase(),
         otp: payload.otp.trim(),
+        purpose: payload.purpose ?? "verify-email",
       },
       skipAuthRefresh: true,
     });
@@ -162,5 +163,18 @@ export const realAuthService: AuthService = {
       }
       throw err;
     }
+  },
+
+  async logout(): Promise<{ message: string }> {
+    const endpoint = requireConfigurableEndpoint(
+      AUTH_ENDPOINTS.logout,
+      "NEXT_PUBLIC_AUTH_LOGOUT_ENDPOINT",
+      "Logout"
+    );
+
+    return authHttpRequest<{ message: string }>(endpoint, {
+      method: "POST",
+      skipAuthRefresh: true,
+    });
   },
 };

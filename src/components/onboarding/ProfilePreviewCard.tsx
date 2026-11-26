@@ -47,57 +47,59 @@ export function ProfilePreviewCard({
   return (
     <aside
       aria-label="Live profile preview"
-      className="rounded-3xl border border-brand-border bg-white p-6 shadow-card lg:sticky lg:top-8"
+      className="rounded-[24px] border border-date2-border bg-date2-white p-6 font-helvetica shadow-indigoCard lg:sticky lg:top-8"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-brand-border/70 pb-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-brand-forest/80">
+      <div className="flex items-center justify-between gap-2 rounded-2xl bg-date2-midnight p-4 text-date2-white">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.11em] text-date2-lightPeriwinkle">
             Profile Preview
           </p>
-          <p className="mt-0.5 text-lg font-bold text-brand-ink">
+          <p className="mt-0.5 truncate text-lg font-bold text-date2-white">
             {username ? `@${username}` : "Date² Member"}
           </p>
         </div>
 
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${
             visibility.showInDiscovery
-              ? "bg-brand-ice text-brand-forest"
-              : "bg-brand-canvas text-brand-muted border border-brand-border"
+              ? "bg-date2-white/15 text-date2-limeMark"
+              : "bg-date2-charcoal text-date2-softBorder"
           }`}
         >
           <span
             aria-hidden="true"
             className={`h-1.5 w-1.5 rounded-full ${
-              visibility.showInDiscovery ? "bg-brand-mint" : "bg-brand-muted/60"
+              visibility.showInDiscovery
+                ? "bg-date2-limeMark"
+                : "bg-date2-softBorder"
             }`}
           />
           {visibility.showInDiscovery ? "Visible" : "Hidden"}
         </span>
       </div>
 
-      <div className="mt-4 space-y-4 text-sm">
+      <div className="mt-4 space-y-3.5 text-sm">
         {/* Sex */}
-        <div className="rounded-2xl border border-brand-border/70 bg-brand-ice/45 p-3.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-muted">
+        <div className="rounded-[16px] border border-date2-border bg-date2-surface p-3.5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-date2-muted">
             About You
           </p>
-          <p className="mt-1 font-semibold text-brand-ink">
+          <p className="mt-1 font-bold text-date2-ink">
             {!sexLabel
               ? "Not selected yet"
               : visibility.showSexOnProfile
                 ? sexLabel
-                : `${sexLabel} (hidden on public profile)`}
+                : "Hidden on public profile"}
           </p>
         </div>
 
         {/* Discovery Preferences */}
-        <div className="rounded-2xl border border-brand-border/70 bg-brand-ice/45 p-3.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-muted">
+        <div className="rounded-[16px] border border-date2-border bg-date2-surface p-3.5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-date2-muted">
             Interested In
           </p>
           {interestedInLabels.length === 0 ? (
-            <p className="mt-1 text-xs text-brand-muted">
+            <p className="mt-1 text-xs text-date2-slate">
               No discovery preferences selected yet
             </p>
           ) : (
@@ -105,7 +107,7 @@ export function ProfilePreviewCard({
               {interestedInLabels.map((label) => (
                 <span
                   key={label}
-                  className="rounded-full border border-brand-border bg-white px-2.5 py-0.5 text-xs font-medium text-brand-ink"
+                  className="rounded-full border border-date2-paleLavender bg-date2-white px-2.5 py-0.5 text-xs font-bold text-date2-deepIndigo"
                 >
                   {label}
                 </span>
@@ -115,20 +117,24 @@ export function ProfilePreviewCard({
         </div>
 
         {/* Selected Interests */}
-        <div className="rounded-2xl border border-brand-border/70 bg-brand-ice/45 p-3.5">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-muted">
+        <div className="rounded-[16px] border border-date2-border bg-date2-surface p-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-date2-muted">
               Selected Interests
             </p>
             {!visibility.showInterestsOnProfile && (
-              <span className="text-[11px] font-medium text-brand-muted">
+              <span className="text-[11px] font-bold text-date2-muted">
                 Hidden on profile
               </span>
             )}
           </div>
 
-          {orderedInterestLabels.length === 0 ? (
-            <p className="mt-1 text-xs text-brand-muted">
+          {!visibility.showInterestsOnProfile ? (
+            <p className="mt-1 text-xs text-date2-slate">
+              Interests are hidden per your visibility settings.
+            </p>
+          ) : orderedInterestLabels.length === 0 ? (
+            <p className="mt-1 text-xs text-date2-slate">
               Your chosen interests will appear here in order.
             </p>
           ) : (
@@ -136,13 +142,11 @@ export function ProfilePreviewCard({
               {orderedInterestLabels.map((label, idx) => (
                 <span
                   key={selectedInterestIds[idx]}
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                    visibility.showInterestsOnProfile
-                      ? "bg-brand-forest text-white"
-                      : "border border-brand-border bg-white text-brand-muted"
-                  }`}
+                  className="inline-flex items-center gap-1 rounded-full bg-date2-midnight px-2.5 py-1 text-xs font-bold text-date2-white"
                 >
-                  <span className="text-[10px] opacity-80">{idx + 1}.</span>
+                  <span className="text-[10px] text-date2-limeMark">
+                    {idx + 1}.
+                  </span>
                   <span>{label}</span>
                 </span>
               ))}

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { StatusBanner } from "@/components/auth/StatusBanner";
+import { registerLogoutCleanup } from "@/lib/auth/sessionCleanup";
 import type { ChatConversation } from "@/services/chat/types";
 import {
   GameServiceError,
@@ -123,12 +124,19 @@ export function GameSection({
 
   useEffect(() => {
     const controller = new AbortController();
-    loadCatalog(controller.signal);
+    void loadCatalog(controller.signal);
     return () => controller.abort();
   }, [loadCatalog]);
 
   useEffect(() => {
+    const unregister = registerLogoutCleanup(() => {
+      socketRef.current?.close();
+      socketRef.current = null;
+      setActiveGame(null);
+      setSessionState(null);
+    });
     return () => {
+      unregister();
       socketRef.current?.close();
     };
   }, []);
@@ -152,6 +160,7 @@ export function GameSection({
         onStatusChange: setConnectionStatus,
         onSessionUpdate: (nextState) => {
           setSessionState(nextState);
+          setSessionError(null);
           if (
             nextState.completed &&
             notifiedCompletionRef.current !== nextState.sessionId
@@ -175,15 +184,15 @@ export function GameSection({
 
   if (conversations.length === 0) {
     return (
-      <div className="mx-auto max-w-xl rounded-3xl border border-brand-border bg-white p-8 text-center shadow-card space-y-4">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-ice text-brand-forest">
+      <div className="mx-auto max-w-xl space-y-4 rounded-[26px] border border-date2-border bg-date2-white p-8 text-center font-helvetica shadow-indigoCard">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-date2-lavenderMist text-date2-deepIndigo">
           <GameCardIcon id="trivia" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-brand-ink">
+          <h2 className="text-lg font-bold text-date2-ink">
             Match with someone to play games
           </h2>
-          <p className="mt-1 text-sm text-brand-muted">
+          <p className="mt-1 text-sm text-date2-slate">
             Games are played together with your matched connections, and final
             results are shared straight into your chat.
           </p>
@@ -191,7 +200,7 @@ export function GameSection({
         <button
           type="button"
           onClick={onGoToMatch}
-          className="inline-flex items-center justify-center rounded-xl bg-brand-forest px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover"
+          className="inline-flex h-[46px] items-center justify-center rounded-[14px] bg-date2-midnight px-6 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
         >
           Discover Matches
         </button>
@@ -202,27 +211,27 @@ export function GameSection({
   // Active Game Session View
   if (activeGame && activePartnerConversation) {
     return (
-      <div className="mx-auto max-w-2xl space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-border bg-white px-5 py-3.5 shadow-soft">
+      <div className="mx-auto max-w-2xl space-y-5 font-helvetica">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-date2-border bg-date2-white px-5 py-3.5 shadow-indigoSoft">
           <div>
-            <p className="text-xs font-medium text-brand-muted">
+            <p className="text-xs font-bold text-date2-slate">
               Playing with {activePartnerConversation.participant.name}
             </p>
-            <h2 className="text-base font-bold text-brand-ink">
+            <h2 className="text-base font-bold text-date2-ink">
               {activeGame.name}
             </h2>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-ice px-2.5 py-1 text-[11px] font-semibold text-brand-forest">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-date2-paleLavender bg-date2-lavenderMist px-3 py-1 text-[11px] font-bold text-date2-midnight">
               <span
                 aria-hidden="true"
                 className={`h-2 w-2 rounded-full ${
                   connectionStatus === "connected"
-                    ? "bg-brand-mint"
+                    ? "bg-date2-violet"
                     : connectionStatus === "connecting" ||
                         connectionStatus === "reconnecting"
-                      ? "bg-amber-500 animate-pulse"
+                      ? "animate-pulse bg-amber-500"
                       : "bg-rose-500"
                 }`}
               />
@@ -238,35 +247,56 @@ export function GameSection({
             <button
               type="button"
               onClick={handleLeaveGame}
-              className="rounded-xl border border-brand-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-forest hover:bg-brand-ice"
+              className="rounded-xl border border-date2-softBorder bg-date2-white px-3 py-1.5 text-xs font-bold text-date2-deepIndigo hover:bg-date2-lavenderMist"
             >
               All Games
             </button>
           </div>
         </div>
 
-        {sessionError && <StatusBanner variant="error" message={sessionError} />}
+        {sessionError && (
+          <StatusBanner
+            variant="error"
+            message={sessionError}
+            action={
+              <button
+                type="button"
+                onClick={() => handleStartGame(activeGame)}
+                className="text-xs font-bold underline underline-offset-2"
+              >
+                Reconnect Session
+              </button>
+            }
+          />
+        )}
 
-        <div className="rounded-3xl border border-brand-border bg-white p-6 shadow-card sm:p-8">
+        <div className="rounded-[24px] border border-date2-border bg-date2-white p-6 shadow-indigoCard sm:p-8">
           {!sessionState ? (
             <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-              <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand-mint border-t-brand-forest" />
-              <p className="text-sm font-medium text-brand-muted">
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-date2-paleLavender border-t-date2-midnight" />
+              <p className="text-sm font-bold text-date2-slate">
                 Connecting to your {activeGame.name} session...
               </p>
             </div>
           ) : sessionState.completed && sessionState.finalResult ? (
             <div className="space-y-5 text-center">
-              <span className="inline-flex rounded-full bg-brand-ice px-3.5 py-1 text-xs font-semibold text-brand-forest">
+              <span className="inline-flex rounded-full bg-date2-lavenderMist px-3.5 py-1 text-xs font-bold text-date2-deepIndigo">
                 Game Finished
               </span>
-              <h3 className="text-2xl font-bold text-brand-ink">
+              <h3 className="text-2xl font-bold text-date2-ink">
                 {sessionState.finalResult.scoreLabel ??
                   sessionState.finalResult.gameName}
               </h3>
-              <p className="text-sm text-brand-muted">
+              <p className="text-sm text-date2-slate">
                 {sessionState.finalResult.summary}
               </p>
+
+              {activeGame.id === "compatibility_quiz" && (
+                <p className="text-xs text-date2-muted">
+                  Compatibility results are an interactive Date² feature based
+                  on your shared quiz choices, not a scientific measurement.
+                </p>
+              )}
 
               <StatusBanner
                 variant="success"
@@ -276,10 +306,8 @@ export function GameSection({
               <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                 <button
                   type="button"
-                  onClick={() =>
-                    onReturnToChat(activePartnerConversation.id)
-                  }
-                  className="flex-1 rounded-xl bg-brand-forest px-4 py-3 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover"
+                  onClick={() => onReturnToChat(activePartnerConversation.id)}
+                  className="h-[48px] flex-1 rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
                 >
                   Return to Chat
                 </button>
@@ -289,7 +317,7 @@ export function GameSection({
                     notifiedCompletionRef.current = null;
                     socketRef.current?.restartGame();
                   }}
-                  className="flex-1 rounded-xl border border-brand-border bg-brand-ice/75 px-4 py-3 text-sm font-semibold text-brand-forest transition-colors hover:bg-brand-frost"
+                  className="h-[48px] flex-1 rounded-[14px] border border-date2-softBorder bg-date2-white px-4 text-sm font-bold text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist"
                 >
                   Play Again
                 </button>
@@ -298,13 +326,13 @@ export function GameSection({
           ) : (
             <div className="space-y-6">
               {/* Score & Turn Status Header */}
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-brand-border/80 bg-brand-ice/55 px-4 py-3 text-xs">
-                <span className="font-semibold text-brand-forest">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-date2-border bg-date2-surface px-4 py-3 text-xs">
+                <span className="font-bold text-date2-deepIndigo">
                   {sessionState.currentTurnLabel}
                 </span>
 
                 {activeGame.id !== "compatibility_quiz" && (
-                  <span className="font-semibold text-brand-ink">
+                  <span className="font-bold text-date2-ink">
                     Score: You {sessionState.score.me} –{" "}
                     {sessionState.score.partner}{" "}
                     {activePartnerConversation.participant.name}
@@ -351,7 +379,7 @@ export function GameSection({
 
   // Games Catalog View
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 font-helvetica">
       {isMock && (
         <StatusBanner
           variant="info"
@@ -366,8 +394,8 @@ export function GameSection({
           action={
             <button
               type="button"
-              onClick={() => loadCatalog()}
-              className="text-xs font-semibold underline underline-offset-2"
+              onClick={() => void loadCatalog()}
+              className="text-xs font-bold underline underline-offset-2"
             >
               Retry
             </button>
@@ -376,12 +404,12 @@ export function GameSection({
       )}
 
       {/* Matched Partner Selector */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-brand-border bg-white p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-[20px] border border-date2-border bg-date2-white p-4 shadow-indigoSoft sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-bold text-brand-ink">
+          <h2 className="text-base font-bold text-date2-ink">
             Play with a Match
           </h2>
-          <p className="text-xs text-brand-muted">
+          <p className="text-xs text-date2-slate">
             Choose a matched conversation to start a synchronized mini-game.
           </p>
         </div>
@@ -390,7 +418,7 @@ export function GameSection({
           aria-label="Select matched partner to play with"
           value={activePartnerConversation?.id ?? ""}
           onChange={(e) => onSelectConversation(e.target.value)}
-          className="auth-input-base sm:w-64"
+          className="date2-input-base sm:w-64"
         >
           {conversations.map((c) => (
             <option key={c.id} value={c.id}>
@@ -407,7 +435,7 @@ export function GameSection({
           {[1, 2, 3].map((n) => (
             <div
               key={n}
-              className="h-52 animate-pulse rounded-3xl border border-brand-border bg-white p-6"
+              className="h-52 animate-pulse rounded-[24px] border border-date2-border bg-date2-white p-6"
             />
           ))}
         </div>
@@ -416,25 +444,25 @@ export function GameSection({
           {catalog.map((game) => (
             <div
               key={game.id}
-              className="flex flex-col justify-between rounded-3xl border border-brand-border bg-white p-6 shadow-card transition-all hover:border-brand-mint"
+              className="flex flex-col justify-between rounded-[24px] border border-date2-border bg-date2-white p-6 shadow-indigoCard transition-all hover:border-date2-violet"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-ice text-brand-forest">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-date2-lavenderMist text-date2-deepIndigo">
                     <GameCardIcon id={game.id} />
                   </span>
                   {game.estimatedTime && (
-                    <span className="rounded-full bg-brand-canvas px-2.5 py-1 text-[11px] font-semibold text-brand-muted">
+                    <span className="rounded-full bg-date2-surface px-2.5 py-1 text-[11px] font-bold text-date2-slate">
                       {game.estimatedTime}
                     </span>
                   )}
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-bold text-brand-ink">
+                  <h3 className="text-lg font-bold text-date2-ink">
                     {game.name}
                   </h3>
-                  <p className="mt-1.5 text-xs leading-relaxed text-brand-muted">
+                  <p className="mt-1.5 text-xs leading-relaxed text-date2-slate">
                     {game.description}
                   </p>
                 </div>
@@ -443,7 +471,7 @@ export function GameSection({
               <button
                 type="button"
                 onClick={() => handleStartGame(game)}
-                className="mt-6 w-full rounded-xl bg-brand-forest px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/35"
+                className="mt-6 h-[46px] w-full rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
               >
                 Play {game.name}
               </button>

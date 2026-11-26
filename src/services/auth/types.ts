@@ -40,7 +40,7 @@ export interface RegisterResponse {
 
 export interface SendOtpRequest {
   email: string;
-  purpose?: "verify-email" | "resend";
+  purpose?: "verify-email" | "resend" | "password-reset";
 }
 
 export interface SendOtpResponse {
@@ -55,12 +55,20 @@ export interface SendOtpResponse {
 export interface VerifyOtpRequest {
   email: string;
   otp: string;
+  purpose?: "verify-email" | "password-reset";
 }
 
 export interface VerifyOtpResponse {
   message: string;
   verified: boolean;
   email: string;
+  /** Returned when verifying a password-reset OTP before setting a new password. */
+  resetToken?: string;
+}
+
+export interface UpdateUnverifiedEmailRequest {
+  currentEmail: string;
+  updatedEmail: string;
 }
 
 export interface ForgotPasswordRequest {
@@ -70,6 +78,9 @@ export interface ForgotPasswordRequest {
 export interface ForgotPasswordResponse {
   message: string;
   email: string;
+  expiresInSeconds?: number;
+  /** Only populated in mock testing mode for local flow verification. */
+  mockOtpHint?: string;
   /** Only populated in mock testing mode for local flow verification. */
   mockResetToken?: string;
 }
@@ -124,9 +135,21 @@ export interface AuthService {
   register(payload: RegisterRequest): Promise<RegisterResponse>;
   sendOtp(payload: SendOtpRequest): Promise<SendOtpResponse>;
   verifyOtp(payload: VerifyOtpRequest): Promise<VerifyOtpResponse>;
+  updateUnverifiedEmail?(
+    payload: UpdateUnverifiedEmailRequest
+  ): Promise<SendOtpResponse>;
+  getMockOtpSnapshot?(
+    email: string,
+    purpose?: "verify-email" | "password-reset"
+  ): { code: string; expiresAt: number } | null;
+  expireMockOtp?(
+    email: string,
+    purpose?: "verify-email" | "password-reset"
+  ): void;
   forgotPassword(
     payload: ForgotPasswordRequest
   ): Promise<ForgotPasswordResponse>;
   resetPassword(payload: ResetPasswordRequest): Promise<ResetPasswordResponse>;
   getSession(signal?: AbortSignal): Promise<SessionResponse>;
+  logout(): Promise<{ message: string }>;
 }

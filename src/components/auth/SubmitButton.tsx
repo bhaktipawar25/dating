@@ -24,12 +24,12 @@ export function SubmitButton({
   const isDisabled = disabled || isLoading;
 
   const baseStyles =
-    "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/35 disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[14px] px-5 font-helvetica text-[15px] font-bold transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60";
 
   const variantStyles =
     variant === "primary"
-      ? "bg-brand-forest text-white shadow-soft hover:bg-brand-forestHover active:scale-[0.99]"
-      : "border border-brand-border bg-brand-ice/70 text-brand-forest hover:bg-brand-frost";
+      ? "bg-date2-midnight text-date2-white shadow-indigoSoft hover:bg-date2-deepIndigo active:scale-[0.99] disabled:bg-date2-softBorder disabled:text-date2-slate"
+      : "border border-date2-softBorder bg-date2-white text-date2-ink hover:border-date2-violet hover:bg-date2-lavenderMist/60";
 
   return (
     <button

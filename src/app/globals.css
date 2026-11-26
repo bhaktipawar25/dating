@@ -37,4 +37,17 @@
   .auth-input-base {
     @apply w-full rounded-xl border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-ink placeholder:text-brand-muted/65 transition-colors duration-150 focus:border-brand-mint focus:outline-none focus:ring-4 focus:ring-brand-mint/20 disabled:cursor-not-allowed disabled:bg-brand-ice/70 disabled:opacity-75;
   }
+
+  .date2-input-base {
+    @apply w-full rounded-[14px] border border-date2-border bg-date2-white px-4 py-3 font-helvetica text-sm font-normal text-date2-ink placeholder:text-date2-muted/75 transition-all duration-150 focus:border-date2-violet focus:outline-none focus:ring-4 focus:ring-date2-paleLavender/70 disabled:cursor-not-allowed disabled:bg-date2-surface disabled:text-date2-slate disabled:opacity-75;
+  }
+
+  .date2-auth-backdrop {
+    background-color: #f7f8fc;
+    background-image:
+      radial-gradient(circle at 10% 10%, rgba(189, 190, 255, 0.48) 0%, transparent 42%),
+      radial-gradient(circle at 90% 88%, rgba(220, 164, 232, 0.25) 0%, transparent 45%),
+      radial-gradient(circle at 75% 15%, rgba(85, 201, 216, 0.14) 0%, transparent 38%),
+      linear-gradient(155deg, #f7f8fc 0%, #eef0f7 55%, #eeeeff 100%);
+  }
 }

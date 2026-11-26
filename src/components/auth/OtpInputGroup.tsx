@@ -41,10 +41,13 @@ export function OtpInputGroup({
       return;
     }
 
-    // Support autofill or multi-character input in any box
     if (cleaned.length > 1) {
       const next = [...digits];
-      for (let offset = 0; offset < cleaned.length && index + offset < length; offset += 1) {
+      for (
+        let offset = 0;
+        offset < cleaned.length && index + offset < length;
+        offset += 1
+      ) {
         next[index + offset] = cleaned[offset];
       }
       commitDigits(next);
@@ -115,7 +118,6 @@ export function OtpInputGroup({
 
     e.preventDefault();
     const next = [...digits];
-    // If the user pastes a full 6-digit code into any box, fill from index 0
     const writeFrom = pasted.length >= length ? 0 : startIndex;
     for (
       let offset = 0;
@@ -155,13 +157,13 @@ export function OtpInputGroup({
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={(e) => handlePaste(index, e)}
           onFocus={(e) => e.currentTarget.select()}
-          className={`h-12 w-full rounded-xl border bg-white text-center text-lg font-bold tracking-wider text-brand-ink transition-all duration-150 focus:outline-none focus:ring-4 sm:h-14 sm:text-xl ${
+          className={`h-12 w-full rounded-[14px] border bg-date2-white text-center font-helvetica text-lg font-bold tracking-wider text-date2-ink transition-all duration-150 focus:outline-none focus:ring-4 sm:h-14 sm:text-xl ${
             hasError
               ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
               : digit
-                ? "border-brand-mint bg-brand-ice/40 focus:border-brand-forest focus:ring-brand-mint/25"
-                : "border-brand-border focus:border-brand-mint focus:ring-brand-mint/25"
-          } disabled:cursor-not-allowed disabled:bg-brand-ice/70 disabled:opacity-75`}
+                ? "border-date2-violet bg-date2-lavenderMist/60 focus:border-date2-deepIndigo focus:ring-date2-paleLavender"
+                : "border-date2-border focus:border-date2-violet focus:ring-date2-paleLavender"
+          } disabled:cursor-not-allowed disabled:bg-date2-surface disabled:opacity-75`}
         />
       ))}
     </div>

@@ -15,6 +15,7 @@ import {
   type SendOtpRequest,
   type SendOtpResponse,
   type SessionResponse,
+  type UpdateUnverifiedEmailRequest,
   type VerifyOtpRequest,
   type VerifyOtpResponse,
 } from "./types";
@@ -30,11 +31,18 @@ interface MockUserRecord {
 interface MockOtpRecord {
   code: string;
   expiresAt: number;
+  purpose: "verify-email" | "password-reset";
 }
 
 const RESERVED_USERNAMES = new Set([
   "admin",
+  "waseem",
   "alex",
+  "date2",
+  "support",
+  "moderator",
+  "official",
+  "ananya",
   "sarah_m",
   "testuser",
   "date2_official",
@@ -42,19 +50,55 @@ const RESERVED_USERNAMES = new Set([
 
 const DEFAULT_MOCK_OTP = "123456";
 const EXPIRED_TEST_OTP = "000000";
+const OUTAGE_TEST_OTP = "888888";
+const DELIVERY_FAIL_TEST_OTP = "999999";
+const OTP_TTL_MS = 120_000;
+const RESEND_COOLDOWN_SECONDS = 30;
 
 const DEV_SESSION_STORAGE_KEY = "date2_dev_mock_session_user";
 
 const globalForMockAuth = globalThis as typeof globalThis & {
   __date2MockUsers?: MockUserRecord[];
   __date2ActiveSessionUser?: AuthUser | null;
+  __date2MockOtps?: Map<string, MockOtpRecord>;
+  __date2MockResetTokens?: Map<string, string>;
 };
 
 const mockUsers: MockUserRecord[] =
-  globalForMockAuth.__date2MockUsers ?? (globalForMockAuth.__date2MockUsers = []);
+  globalForMockAuth.__date2MockUsers ??
+  (globalForMockAuth.__date2MockUsers = []);
+
+const mockOtpStore: Map<string, MockOtpRecord> =
+  globalForMockAuth.__date2MockOtps ??
+  (globalForMockAuth.__date2MockOtps = new Map<string, MockOtpRecord>());
+
+const mockResetTokens: Map<string, string> =
+  globalForMockAuth.__date2MockResetTokens ??
+  (globalForMockAuth.__date2MockResetTokens = new Map<string, string>());
 
 function isDevMockMode(): boolean {
   return process.env.NODE_ENV !== "production" && AUTH_CONFIG.mode === "mock";
+}
+
+function otpKey(
+  email: string,
+  purpose: "verify-email" | "password-reset" = "verify-email"
+): string {
+  return `${purpose}:${email.trim().toLowerCase()}`;
+}
+
+function issueMockOtp(
+  email: string,
+  purpose: "verify-email" | "password-reset"
+): MockOtpRecord {
+  const cleanEmail = email.trim().toLowerCase();
+  const record: MockOtpRecord = {
+    code: DEFAULT_MOCK_OTP,
+    expiresAt: Date.now() + OTP_TTL_MS,
+    purpose,
+  };
+  mockOtpStore.set(otpKey(cleanEmail, purpose), record);
+  return record;
 }
 
 function setActiveSessionUser(user: MockUserRecord | null): void {
@@ -101,9 +145,6 @@ function getActiveSessionUser(): AuthUser | null {
   return null;
 }
 
-const mockOtpStore = new Map<string, MockOtpRecord>();
-const mockResetTokens = new Map<string, string>();
-
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
@@ -135,8 +176,8 @@ function toPublicUser(record: MockUserRecord): AuthUser {
 }
 
 /**
- * Clearly isolated in-memory mock service for frontend UI verification when
- * no backend server is running. Does NOT issue real sessions or send emails.
+ * Isolated in-memory mock service for frontend UI verification when no backend
+ * server is running. Does NOT send real emails or expose production secrets.
  */
 export const mockAuthService: AuthService = {
   mode: "mock",
@@ -145,23 +186,23 @@ export const mockAuthService: AuthService = {
     username: string,
     signal?: AbortSignal
   ): Promise<CheckUsernameResponse> {
-    await delay(260, signal);
+    await delay(320, signal);
     const normalized = username.trim().toLowerCase();
     const isTaken =
       RESERVED_USERNAMES.has(normalized) ||
       mockUsers.some((u) => u.username.toLowerCase() === normalized);
 
     return {
-      username: username.trim(),
+      username: normalized,
       available: !isTaken,
       message: isTaken
-        ? "This username is already taken."
-        : "Username is available.",
+        ? "✗ Username already taken. Try another."
+        : "✓ Username available",
     };
   },
 
   async login(payload: LoginRequest): Promise<LoginResponse> {
-    await delay(450);
+    await delay(400);
     const identifier = payload.identifier.trim().toLowerCase();
 
     const user = mockUsers.find(
@@ -177,23 +218,28 @@ export const mockAuthService: AuthService = {
       });
     }
 
+    setActiveSessionUser(user);
+
     if (!user.emailVerified) {
+      issueMockOtp(user.email, "verify-email");
       throw new AuthServiceError(
-        "Your email address is not verified yet. Please enter your verification code first.",
-        { status: 403, code: "EMAIL_NOT_VERIFIED" }
+        "Email verification required before entering Date².",
+        {
+          status: 403,
+          code: "EMAIL_NOT_VERIFIED",
+          fieldErrors: { resolvedEmail: user.email },
+        }
       );
     }
 
-    setActiveSessionUser(user);
-
     return {
-      message: "Signed in using mock frontend test mode.",
+      message: "Signed in using local mock test mode.",
       user: toPublicUser(user),
     };
   },
 
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
-    await delay(500);
+    await delay(450);
     const normalizedUsername = payload.username.trim().toLowerCase();
     const normalizedEmail = payload.email.trim().toLowerCase();
 
@@ -201,16 +247,21 @@ export const mockAuthService: AuthService = {
       RESERVED_USERNAMES.has(normalizedUsername) ||
       mockUsers.some((u) => u.username.toLowerCase() === normalizedUsername)
     ) {
-      throw new AuthServiceError("That username is already taken.", {
-        status: 409,
-        code: "USERNAME_TAKEN",
-        fieldErrors: { username: "That username is already taken." },
-      });
+      throw new AuthServiceError(
+        "An account with that email or username already exists.",
+        {
+          status: 409,
+          code: "USERNAME_TAKEN",
+          fieldErrors: {
+            username: "✗ Username already taken. Try another.",
+          },
+        }
+      );
     }
 
     if (mockUsers.some((u) => u.email.toLowerCase() === normalizedEmail)) {
       throw new AuthServiceError(
-        "An account with this email already exists.",
+        "An account with that email or username already exists.",
         {
           status: 409,
           code: "EMAIL_TAKEN",
@@ -223,7 +274,7 @@ export const mockAuthService: AuthService = {
 
     const createdUser: MockUserRecord = {
       id: `mock-user-${mockUsers.length + 1}`,
-      username: payload.username.trim(),
+      username: normalizedUsername,
       email: normalizedEmail,
       password: payload.password,
       emailVerified: false,
@@ -231,35 +282,87 @@ export const mockAuthService: AuthService = {
     mockUsers.push(createdUser);
     setActiveSessionUser(createdUser);
 
-    mockOtpStore.set(normalizedEmail, {
-      code: DEFAULT_MOCK_OTP,
-      expiresAt: Date.now() + 120_000,
-    });
+    issueMockOtp(normalizedEmail, "verify-email");
 
     return {
-      message: "Mock account created. Simulated verification code issued.",
+      message: "Account created. Demo 6-digit verification code issued.",
       email: normalizedEmail,
       otpSent: true,
-      expiresInSeconds: 120,
-      mockOtpHint: DEFAULT_MOCK_OTP,
+      expiresInSeconds: OTP_TTL_MS / 1000,
+      mockOtpHint: isDevMockMode() ? DEFAULT_MOCK_OTP : undefined,
     };
   },
 
   async sendOtp(payload: SendOtpRequest): Promise<SendOtpResponse> {
-    await delay(380);
+    await delay(350);
     const normalizedEmail = payload.email.trim().toLowerCase();
+    const purpose =
+      payload.purpose === "password-reset" ? "password-reset" : "verify-email";
 
-    mockOtpStore.set(normalizedEmail, {
-      code: DEFAULT_MOCK_OTP,
-      expiresAt: Date.now() + 120_000,
-    });
+    if (normalizedEmail.startsWith("fail")) {
+      throw new AuthServiceError(
+        `Delivery failed for ${normalizedEmail}. Verify your address or contact support.`,
+        { status: 502, code: "OTP_DELIVERY_FAILED" }
+      );
+    }
+    if (normalizedEmail.startsWith("offline")) {
+      throw new AuthServiceError(
+        "Verification service temporarily unavailable. Please wait and retry.",
+        { status: 503, code: "OTP_SERVICE_UNAVAILABLE" }
+      );
+    }
+
+    issueMockOtp(normalizedEmail, purpose);
 
     return {
-      message: `Simulated OTP issued for ${normalizedEmail}.`,
+      message: `A 6-digit verification code has been issued for ${normalizedEmail}.`,
       email: normalizedEmail,
-      expiresInSeconds: 120,
-      cooldownSeconds: 60,
-      mockOtpHint: DEFAULT_MOCK_OTP,
+      expiresInSeconds: OTP_TTL_MS / 1000,
+      cooldownSeconds: RESEND_COOLDOWN_SECONDS,
+      mockOtpHint: isDevMockMode() ? DEFAULT_MOCK_OTP : undefined,
+    };
+  },
+
+  async updateUnverifiedEmail(
+    payload: UpdateUnverifiedEmailRequest
+  ): Promise<SendOtpResponse> {
+    await delay(350);
+    const oldEmail = payload.currentEmail.trim().toLowerCase();
+    const newEmail = payload.updatedEmail.trim().toLowerCase();
+
+    if (newEmail.startsWith("fail")) {
+      throw new AuthServiceError(
+        `Delivery failed for ${newEmail}. Verify your address or contact support.`,
+        { status: 502, code: "OTP_DELIVERY_FAILED" }
+      );
+    }
+
+    const user = mockUsers.find((u) => u.email.toLowerCase() === oldEmail);
+    if (user) {
+      user.email = newEmail;
+      user.emailVerified = false;
+      setActiveSessionUser(user);
+    } else {
+      const existing = getActiveSessionUser();
+      if (existing) {
+        const updatedSession: AuthUser = {
+          ...existing,
+          email: newEmail,
+          emailVerified: false,
+        };
+        globalForMockAuth.__date2ActiveSessionUser = updatedSession;
+      }
+    }
+
+    mockOtpStore.delete(otpKey(oldEmail, "verify-email"));
+    issueMockOtp(newEmail, "verify-email");
+
+    return {
+      message: `Verification code sent to ${newEmail}.`,
+      email: newEmail,
+      expiresInSeconds: OTP_TTL_MS / 1000,
+      cooldownSeconds: RESEND_COOLDOWN_SECONDS,
+      mockOtpHint: isDevMockMode() ? DEFAULT_MOCK_OTP : undefined,
     };
   },
 
@@ -267,29 +370,59 @@ export const mockAuthService: AuthService = {
     await delay(420);
     const normalizedEmail = payload.email.trim().toLowerCase();
     const code = payload.otp.trim();
+    const purpose =
+      payload.purpose === "password-reset" ? "password-reset" : "verify-email";
 
     if (code === EXPIRED_TEST_OTP) {
       throw new AuthServiceError(
-        "This verification code has expired. Please request a new code.",
+        "This OTP has expired. Tap Resend Code to request a fresh code.",
         { status: 410, code: "OTP_EXPIRED" }
       );
     }
+    if (code === OUTAGE_TEST_OTP) {
+      throw new AuthServiceError(
+        "Verification service temporarily unavailable. Please wait and retry.",
+        { status: 503, code: "OTP_SERVICE_UNAVAILABLE" }
+      );
+    }
+    if (code === DELIVERY_FAIL_TEST_OTP) {
+      throw new AuthServiceError(
+        `Delivery failed for ${normalizedEmail}. Verify your address or contact support.`,
+        { status: 502, code: "OTP_DELIVERY_FAILED" }
+      );
+    }
 
-    const record = mockOtpStore.get(normalizedEmail);
+    const key = otpKey(normalizedEmail, purpose);
+    const record = mockOtpStore.get(key);
     const expectedCode = record?.code ?? DEFAULT_MOCK_OTP;
 
     if (record && Date.now() > record.expiresAt) {
       throw new AuthServiceError(
-        "This verification code has expired. Please resend a new code.",
+        "This OTP has expired. Tap Resend Code to request a fresh code.",
         { status: 410, code: "OTP_EXPIRED" }
       );
     }
 
     if (code !== expectedCode) {
       throw new AuthServiceError(
-        `Incorrect verification code. (In mock mode, use ${expectedCode}, or ${EXPIRED_TEST_OTP} to test expiry.)`,
+        "Invalid code entered. Check the 6-digit OTP and try again.",
         { status: 400, code: "OTP_INVALID" }
       );
+    }
+
+    mockOtpStore.delete(key);
+
+    if (purpose === "password-reset") {
+      const resetToken = `mock-reset-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      mockResetTokens.set(resetToken, normalizedEmail);
+      return {
+        message: "Reset code verified.",
+        verified: true,
+        email: normalizedEmail,
+        resetToken,
+      };
     }
 
     const user = mockUsers.find(
@@ -321,7 +454,6 @@ export const mockAuthService: AuthService = {
         }
       }
     }
-    mockOtpStore.delete(normalizedEmail);
 
     return {
       message: "Email verified successfully in mock test mode.",
@@ -330,46 +462,90 @@ export const mockAuthService: AuthService = {
     };
   },
 
+  getMockOtpSnapshot(
+    email: string,
+    purpose: "verify-email" | "password-reset" = "verify-email"
+  ): { code: string; expiresAt: number } | null {
+    if (!isDevMockMode()) return null;
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return null;
+    const key = otpKey(cleanEmail, purpose);
+    const existing = mockOtpStore.get(key);
+    if (existing) {
+      return { code: existing.code, expiresAt: existing.expiresAt };
+    }
+    const created = issueMockOtp(cleanEmail, purpose);
+    return { code: created.code, expiresAt: created.expiresAt };
+  },
+
+  expireMockOtp(
+    email: string,
+    purpose: "verify-email" | "password-reset" = "verify-email"
+  ): void {
+    if (!isDevMockMode()) return;
+    const key = otpKey(email, purpose);
+    const existing = mockOtpStore.get(key);
+    if (!existing) return;
+    mockOtpStore.set(key, {
+      ...existing,
+      expiresAt: Date.now() - 1000,
+    });
+  },
+
   async forgotPassword(
     payload: ForgotPasswordRequest
   ): Promise<ForgotPasswordResponse> {
-    await delay(420);
+    await delay(350);
     const normalizedEmail = payload.email.trim().toLowerCase();
-    const token = "mock-reset-token";
-    mockResetTokens.set(token, normalizedEmail);
+
+    if (
+      normalizedEmail.startsWith("fail") ||
+      normalizedEmail.startsWith("unknown")
+    ) {
+      throw new AuthServiceError(
+        "Unable to dispatch code. Verify email or try again.",
+        { status: 400, code: "RESET_DISPATCH_FAILED" }
+      );
+    }
+
+    issueMockOtp(normalizedEmail, "password-reset");
 
     return {
-      message:
-        "Simulated password reset instructions prepared. Use the reset link below to test the new password stage.",
+      message: `6-digit verification code sent to ${normalizedEmail}.`,
       email: normalizedEmail,
-      mockResetToken: token,
+      expiresInSeconds: OTP_TTL_MS / 1000,
+      mockOtpHint: isDevMockMode() ? DEFAULT_MOCK_OTP : undefined,
     };
   },
 
   async resetPassword(
     payload: ResetPasswordRequest
   ): Promise<ResetPasswordResponse> {
-    await delay(420);
-    const targetEmail = mockResetTokens.get(payload.token.trim());
-    if (!payload.token.trim() || (!targetEmail && payload.token !== "mock-reset-token")) {
+    await delay(450);
+    const token = payload.token.trim();
+    const targetEmail = mockResetTokens.get(token);
+
+    if (!token) {
       throw new AuthServiceError(
-        "Reset token is invalid or expired. Request a new password reset link.",
+        "Reset verification session is missing or expired. Please request a new code.",
         { status: 400, code: "INVALID_RESET_TOKEN" }
       );
     }
 
+    const emailToMatch = targetEmail ?? token;
+    const user = mockUsers.find(
+      (u) => u.email.toLowerCase() === emailToMatch.toLowerCase()
+    );
+    if (user) {
+      user.password = payload.newPassword;
+    }
     if (targetEmail) {
-      const user = mockUsers.find(
-        (u) => u.email.toLowerCase() === targetEmail
-      );
-      if (user) {
-        user.password = payload.newPassword;
-      }
-      mockResetTokens.delete(payload.token.trim());
+      mockResetTokens.delete(token);
     }
 
     return {
-      message: "Password updated in mock test mode. You can now sign in.",
+      message:
+        "Your password has been updated. Please sign in with your new credentials.",
     };
   },
 
@@ -382,6 +558,14 @@ export const mockAuthService: AuthService = {
     return {
       authenticated: true,
       user: current,
+    };
+  },
+
+  async logout(): Promise<{ message: string }> {
+    await delay(180);
+    setActiveSessionUser(null);
+    return {
+      message: "Signed out of local test session.",
     };
   },
 };

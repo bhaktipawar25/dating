@@ -25,12 +25,14 @@ const ALL_STATUS_STEPS: readonly {
   {
     key: "NOT_STARTED",
     title: "Not Started",
-    description: "Begin by completing your Face Scan and Government ID upload.",
+    description:
+      "Begin by completing your Face Scan and Government ID verification.",
   },
   {
     key: "CAMERA_PERMISSION_REQUIRED",
     title: "Camera Permission Required",
-    description: "Grant webcam access when prompted to take your live face photo.",
+    description:
+      "Grant webcam access when prompted to take your live face photo.",
   },
   {
     key: "FACE_SCAN_SUBMITTED",
@@ -40,7 +42,8 @@ const ALL_STATUS_STEPS: readonly {
   {
     key: "DOCUMENT_SUBMITTED",
     title: "Document Submitted",
-    description: "Your government ID files have been sent for backend verification.",
+    description:
+      "Your government ID files have been sent for backend verification.",
   },
   {
     key: "VERIFICATION_PENDING",
@@ -50,12 +53,25 @@ const ALL_STATUS_STEPS: readonly {
   {
     key: "VERIFIED",
     title: "Verified",
-    description: "Identity verification is complete. You can continue to Personal Information.",
+    description:
+      "Identity verification is complete. You can continue to Personal Information.",
   },
   {
     key: "VERIFICATION_FAILED",
     title: "Verification Failed",
     description: "One or more checks failed and require resubmission.",
+  },
+  {
+    key: "REJECTED",
+    title: "Rejected",
+    description:
+      "Submitted identity documents could not be verified. Please resubmit clearer photos.",
+  },
+  {
+    key: "RETRY_REQUIRED",
+    title: "Retry Required",
+    description:
+      "Additional capture clarity is required. Retry your live scan or document upload.",
   },
 ];
 
@@ -86,7 +102,7 @@ export function SecurityStatusView() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchStatus(controller.signal);
+    void fetchStatus(controller.signal);
     return () => controller.abort();
   }, [fetchStatus]);
 
@@ -117,7 +133,7 @@ export function SecurityStatusView() {
     currentOverall === "VERIFICATION_PENDING";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-helvetica">
       {error && (
         <StatusBanner
           variant="error"
@@ -125,8 +141,8 @@ export function SecurityStatusView() {
           action={
             <button
               type="button"
-              onClick={() => fetchStatus()}
-              className="text-xs font-semibold underline underline-offset-2"
+              onClick={() => void fetchStatus()}
+              className="text-xs font-bold underline underline-offset-2"
             >
               Retry
             </button>
@@ -137,14 +153,14 @@ export function SecurityStatusView() {
       {isVerified ? (
         <StatusBanner
           variant="success"
-          title="Verification approved"
+          title="Verification Approved"
           message="Your Face Scan and Government ID verification are complete. Continue to Personal Information to set up your profile."
         />
       ) : (
         statusData?.isMockResponse && (
           <StatusBanner
             variant="info"
-            message="Displaying local development test status. Connect the Date² backend service for real facial and government ID verification."
+            message="Displaying local development verification status. Connect the Date² backend service for real facial and government ID verification."
           />
         )
       )}
@@ -152,24 +168,24 @@ export function SecurityStatusView() {
       {statusData?.failureReason && (
         <StatusBanner
           variant="error"
-          title="Verification issue"
+          title="Verification Issue"
           message={statusData.failureReason}
         />
       )}
 
       {/* Overall Status Header Card */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-brand-border bg-brand-ice/70 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-[18px] border border-date2-border bg-date2-surface p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-medium text-brand-muted">
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-date2-muted">
             Overall Verification Status
           </p>
-          <p className="mt-1 text-base font-bold text-brand-ink">
+          <p className="mt-1 text-base font-bold text-date2-ink">
             {loading
-              ? "Loading current status..."
+              ? "Checking current status..."
               : ALL_STATUS_STEPS.find((s) => s.key === currentOverall)?.title ??
                 "Status"}
           </p>
-          <p className="mt-0.5 text-xs text-brand-muted">
+          <p className="mt-0.5 text-xs text-date2-slate">
             {ALL_STATUS_STEPS.find((s) => s.key === currentOverall)
               ?.description ?? ""}
           </p>
@@ -180,8 +196,8 @@ export function SecurityStatusView() {
           <button
             type="button"
             disabled={loading || isSimulating}
-            onClick={() => fetchStatus()}
-            className="rounded-xl border border-brand-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-forest transition-colors hover:bg-brand-frost disabled:opacity-50"
+            onClick={() => void fetchStatus()}
+            className="rounded-xl border border-date2-softBorder bg-date2-white px-3 py-1.5 text-xs font-bold text-date2-deepIndigo transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist disabled:opacity-50"
           >
             Refresh
           </button>
@@ -190,47 +206,51 @@ export function SecurityStatusView() {
 
       {/* Individual Check Breakdown */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-brand-border bg-white p-5 space-y-3">
+        <div className="space-y-3 rounded-[16px] border border-date2-border bg-date2-white p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-bold text-brand-ink">Face Scan</h2>
+            <h2 className="text-sm font-bold text-date2-ink">Face Scan</h2>
             <VerificationStatusBadge
               status={statusData?.faceScan.status ?? "NOT_STARTED"}
             />
           </div>
-          <p className="text-xs leading-relaxed text-brand-muted">
+          <p className="text-xs leading-relaxed text-date2-slate">
             {statusData?.faceScan.message ?? "No face scan submitted yet."}
           </p>
           {statusData?.faceScan.status !== "VERIFIED" && (
             <Link
               href="/security-check/face-scan"
-              className="inline-flex text-xs font-semibold text-brand-forest hover:text-brand-mintHover hover:underline"
+              className="inline-flex text-xs font-bold text-date2-deepIndigo hover:text-date2-violet hover:underline"
             >
-              {statusData?.faceScan.status === "FAILED"
+              {statusData?.faceScan.status === "FAILED" ||
+              statusData?.faceScan.status === "REJECTED" ||
+              statusData?.faceScan.status === "RETRY_REQUIRED"
                 ? "Retry Face Scan →"
                 : "Go to Face Scan →"}
             </Link>
           )}
         </div>
 
-        <div className="rounded-2xl border border-brand-border bg-white p-5 space-y-3">
+        <div className="space-y-3 rounded-[16px] border border-date2-border bg-date2-white p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-bold text-brand-ink">
+            <h2 className="text-sm font-bold text-date2-ink">
               Government ID Document
             </h2>
             <VerificationStatusBadge
               status={statusData?.documentVerification.status ?? "NOT_STARTED"}
             />
           </div>
-          <p className="text-xs leading-relaxed text-brand-muted">
+          <p className="text-xs leading-relaxed text-date2-slate">
             {statusData?.documentVerification.message ??
               "No identity document submitted yet."}
           </p>
           {statusData?.documentVerification.status !== "VERIFIED" && (
             <Link
               href="/security-check/document-verification"
-              className="inline-flex text-xs font-semibold text-brand-forest hover:text-brand-mintHover hover:underline"
+              className="inline-flex text-xs font-bold text-date2-deepIndigo hover:text-date2-violet hover:underline"
             >
-              {statusData?.documentVerification.status === "FAILED"
+              {statusData?.documentVerification.status === "FAILED" ||
+              statusData?.documentVerification.status === "REJECTED" ||
+              statusData?.documentVerification.status === "RETRY_REQUIRED"
                 ? "Resubmit Document →"
                 : "Go to Document Verification →"}
             </Link>
@@ -240,12 +260,12 @@ export function SecurityStatusView() {
 
       {/* Development-Only Simulation Panel */}
       {canSimulateInDev && (
-        <div className="rounded-2xl border border-brand-mint/70 bg-brand-ice/70 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-[16px] border border-date2-paleLavender bg-date2-lavenderMist/70 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold text-brand-forest">
+            <p className="text-xs font-bold text-date2-midnight">
               Development Testing Controls
             </p>
-            <p className="mt-0.5 text-xs text-brand-muted">
+            <p className="mt-0.5 text-xs text-date2-slate">
               Both checks are submitted. Simulate backend approval to mark Face
               Scan and Government ID as Verified and continue to Personal
               Information.
@@ -254,17 +274,19 @@ export function SecurityStatusView() {
           <button
             type="button"
             disabled={isSimulating || loading}
-            onClick={handleSimulateApproval}
-            className="shrink-0 rounded-xl bg-brand-forest px-4 py-2.5 text-xs font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/35 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => void handleSimulateApproval()}
+            className="shrink-0 rounded-xl bg-date2-midnight px-4 py-2.5 text-xs font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSimulating ? "Simulating Approval..." : "Simulate Backend Approval"}
+            {isSimulating
+              ? "Simulating Approval..."
+              : "Simulate Backend Approval"}
           </button>
         </div>
       )}
 
       {/* Status Reference List */}
-      <div className="rounded-2xl border border-brand-border/80 bg-brand-canvas p-4 space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+      <div className="space-y-3 rounded-[16px] border border-date2-border bg-date2-canvas p-4">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.11em] text-date2-muted">
           Verification Stages
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -273,10 +295,10 @@ export function SecurityStatusView() {
             return (
               <div
                 key={step.key}
-                className={`rounded-xl border px-2.5 py-1.5 text-xs ${
+                className={`rounded-xl border px-3 py-1.5 text-xs ${
                   active
-                    ? "border-brand-forest bg-white font-semibold text-brand-ink shadow-sm"
-                    : "border-brand-border/60 bg-white/50 text-brand-muted"
+                    ? "border-date2-violet bg-date2-white font-bold text-date2-midnight shadow-sm"
+                    : "border-date2-border bg-date2-white/60 text-date2-slate"
                 }`}
               >
                 {step.title}
@@ -293,7 +315,7 @@ export function SecurityStatusView() {
           variant="secondary"
           isLoading={loading}
           loadingText="Refreshing status..."
-          onClick={() => fetchStatus()}
+          onClick={() => void fetchStatus()}
         >
           Refresh Verification Status
         </SubmitButton>

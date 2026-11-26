@@ -43,7 +43,7 @@ export function PasswordInput({
         disabled={disabled}
         aria-invalid={hasError}
         aria-describedby={describedBy}
-        className={`auth-input-base pr-11 ${
+        className={`date2-input-base pr-11 ${
           hasError
             ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
             : ""
@@ -56,7 +56,7 @@ export function PasswordInput({
         disabled={disabled}
         aria-label={visible ? "Hide password" : "Show password"}
         aria-pressed={visible}
-        className="absolute inset-y-0 right-0 flex items-center rounded-r-xl px-3 text-brand-muted transition-colors hover:text-brand-forest focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mint disabled:pointer-events-none disabled:opacity-50"
+        className="absolute inset-y-0 right-0 flex items-center rounded-r-[14px] px-3.5 text-date2-muted transition-colors hover:text-date2-deepIndigo focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet disabled:pointer-events-none disabled:opacity-50"
       >
         {visible ? (
           <svg

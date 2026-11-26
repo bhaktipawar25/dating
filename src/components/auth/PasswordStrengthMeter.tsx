@@ -1,26 +1,29 @@
 "use client";
 
 import React from "react";
-import { evaluatePasswordStrength } from "@/lib/validation/authValidation";
+import {
+  PASSWORD_MIN_LENGTH,
+  evaluatePasswordStrength,
+} from "@/lib/validation/authValidation";
 
 interface PasswordStrengthMeterProps {
   password: string;
 }
 
 const SCORE_BAR_COLORS: Record<number, string> = {
-  0: "bg-brand-border/60",
+  0: "bg-date2-border",
   1: "bg-rose-500",
   2: "bg-amber-500",
-  3: "bg-brand-mint",
-  4: "bg-brand-forest",
+  3: "bg-date2-indigo",
+  4: "bg-date2-deepIndigo",
 };
 
 const SCORE_TEXT_COLORS: Record<number, string> = {
-  0: "text-brand-muted",
+  0: "text-date2-muted",
   1: "text-rose-600",
   2: "text-amber-700",
-  3: "text-teal-700",
-  4: "text-brand-forest",
+  3: "text-date2-indigo",
+  4: "text-date2-midnight",
 };
 
 export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) {
@@ -31,26 +34,36 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
   }
 
   const rules = [
-    { key: "len", met: criteria.minLength, text: "8+ characters" },
     {
-      key: "case",
-      met: criteria.hasUppercase && criteria.hasLowercase,
-      text: "Upper & lowercase",
+      key: "len",
+      met: criteria.minLength,
+      text: `Minimum ${PASSWORD_MIN_LENGTH} characters`,
     },
-    { key: "num", met: criteria.hasNumber, text: "One number" },
-    { key: "sym", met: criteria.hasSpecial, text: "Special character" },
+    {
+      key: "upper",
+      met: criteria.hasUppercase,
+      text: "At least one uppercase letter (A-Z)",
+    },
+    {
+      key: "num",
+      met: criteria.hasNumber,
+      text: "At least one number (0-9)",
+    },
+    {
+      key: "sym",
+      met: criteria.hasSpecial,
+      text: "At least one special character (!@#$...)",
+    },
   ];
 
   return (
     <div
-      className="mt-2 rounded-xl border border-brand-border/80 bg-brand-ice/60 p-3"
+      className="mt-2.5 rounded-[14px] border border-date2-border bg-date2-surface p-3.5 font-helvetica"
       aria-live="polite"
     >
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-brand-muted">Password strength</span>
-        <span className={`font-semibold ${SCORE_TEXT_COLORS[score]}`}>
-          {label}
-        </span>
+        <span className="font-bold text-date2-charcoal">Password Strength</span>
+        <span className={`font-bold ${SCORE_TEXT_COLORS[score]}`}>{label}</span>
       </div>
 
       <div className="mt-2 grid grid-cols-4 gap-1.5" role="presentation">
@@ -60,27 +73,29 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
             <div
               key={segment}
               className={`h-1.5 rounded-full transition-colors duration-200 ${
-                active ? SCORE_BAR_COLORS[score] : "bg-white"
+                active ? SCORE_BAR_COLORS[score] : "bg-date2-white"
               }`}
             />
           );
         })}
       </div>
 
-      <ul className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+      <ul className="mt-3 space-y-1.5 text-xs">
         {rules.map((rule) => (
           <li
             key={rule.key}
-            className={`flex items-center gap-1.5 ${
-              rule.met ? "font-medium text-brand-forest" : "text-brand-muted"
+            className={`flex items-center gap-2 ${
+              rule.met
+                ? "font-bold text-date2-deepIndigo"
+                : "text-date2-slate"
             }`}
           >
             <span
               aria-hidden="true"
-              className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[9px] ${
+              className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
                 rule.met
-                  ? "bg-brand-mint text-brand-forest"
-                  : "border border-brand-border bg-white text-transparent"
+                  ? "bg-date2-violet text-date2-white"
+                  : "border border-date2-softBorder bg-date2-white text-transparent"
               }`}
             >
               ✓

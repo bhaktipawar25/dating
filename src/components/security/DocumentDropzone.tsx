@@ -33,13 +33,11 @@ export function DocumentDropzone({
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // Optional webcam snapshot state
   const [cameraOpen, setCameraOpen] = useState(false);
   const [snapshotBlob, setSnapshotBlob] = useState<Blob | null>(null);
   const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
   const webcam = useWebcam();
 
-  // Maintain and revoke object URLs cleanly when file changes or unmounts
   useEffect(() => {
     if (!file || isPdfFile(file)) {
       setPreviewUrl(null);
@@ -116,17 +114,17 @@ export function DocumentDropzone({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5 font-helvetica">
       <div className="flex items-center justify-between gap-2">
-        <label htmlFor={id} className="text-sm font-semibold text-brand-ink">
+        <label htmlFor={id} className="text-sm font-bold text-date2-ink">
           {label}
         </label>
         {!file && !cameraOpen && (
           <button
             type="button"
             disabled={disabled}
-            onClick={openWebcamSnapshot}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-brand-ice/70 px-2.5 py-1 text-xs font-semibold text-brand-forest transition-colors hover:bg-brand-frost focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mint disabled:opacity-50"
+            onClick={() => void openWebcamSnapshot()}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-date2-softBorder bg-date2-lavenderMist/70 px-3 py-1.5 text-xs font-bold text-date2-deepIndigo transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet disabled:opacity-50"
           >
             <svg
               aria-hidden="true"
@@ -139,7 +137,7 @@ export function DocumentDropzone({
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
-            Use Webcam
+            Use Camera
           </button>
         )}
       </div>
@@ -159,15 +157,15 @@ export function DocumentDropzone({
       />
 
       {cameraOpen ? (
-        <div className="rounded-2xl border border-brand-border bg-brand-ice/50 p-4 space-y-3">
+        <div className="space-y-3 rounded-[16px] border border-date2-border bg-date2-surface p-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-brand-forest">
-              Document Webcam Capture
+            <p className="text-xs font-bold text-date2-midnight">
+              Document Camera Capture
             </p>
             <button
               type="button"
               onClick={closeWebcamSnapshot}
-              className="text-xs font-semibold text-brand-muted hover:text-brand-ink"
+              className="text-xs font-bold text-date2-slate hover:text-date2-ink"
             >
               Cancel
             </button>
@@ -175,26 +173,26 @@ export function DocumentDropzone({
 
           {snapshotUrl ? (
             <div className="space-y-3">
-              <div className="overflow-hidden rounded-xl border border-brand-border bg-white">
+              <div className="overflow-hidden rounded-xl border border-date2-border bg-date2-white">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={snapshotUrl}
                   alt={`${label} snapshot preview`}
-                  className="max-h-60 w-full object-contain bg-brand-canvas"
+                  className="max-h-60 w-full bg-date2-canvas object-contain"
                 />
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={openWebcamSnapshot}
-                  className="flex-1 rounded-xl border border-brand-border bg-white px-3 py-2 text-xs font-semibold text-brand-forest hover:bg-brand-ice"
+                  onClick={() => void openWebcamSnapshot()}
+                  className="flex-1 rounded-xl border border-date2-softBorder bg-date2-white px-3 py-2 text-xs font-bold text-date2-ink hover:bg-date2-lavenderMist"
                 >
-                  Retake Snapshot
+                  Retake Camera
                 </button>
                 <button
                   type="button"
                   onClick={confirmSnapshot}
-                  className="flex-1 rounded-xl bg-brand-forest px-3 py-2 text-xs font-semibold text-white hover:bg-brand-forestHover"
+                  className="flex-1 rounded-xl bg-date2-midnight px-3 py-2 text-xs font-bold text-date2-white hover:bg-date2-deepIndigo"
                 >
                   Use This Photo
                 </button>
@@ -202,7 +200,7 @@ export function DocumentDropzone({
             </div>
           ) : webcam.status === "active" ? (
             <div className="space-y-3">
-              <div className="overflow-hidden rounded-xl border border-brand-border bg-brand-ink">
+              <div className="relative overflow-hidden rounded-xl border-2 border-date2-violet bg-date2-ink">
                 <video
                   ref={webcam.videoRef}
                   playsInline
@@ -210,17 +208,22 @@ export function DocumentDropzone({
                   autoPlay
                   className="max-h-60 w-full object-cover"
                 />
+                {/* Rectangular corner framing guide */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-4 rounded-xl border-2 border-dashed border-date2-paleLavender/80"
+                />
               </div>
               <button
                 type="button"
-                onClick={handleCaptureSnapshot}
-                className="w-full rounded-xl bg-brand-forest px-4 py-2.5 text-xs font-semibold text-white hover:bg-brand-forestHover"
+                onClick={() => void handleCaptureSnapshot()}
+                className="w-full rounded-xl bg-date2-midnight px-4 py-2.5 text-xs font-bold text-date2-white hover:bg-date2-deepIndigo"
               >
                 Capture Document Snapshot
               </button>
             </div>
           ) : (
-            <div className="rounded-xl border border-brand-border bg-white p-4 text-center text-xs text-brand-muted space-y-2">
+            <div className="space-y-2 rounded-xl border border-date2-border bg-date2-white p-4 text-center text-xs text-date2-slate">
               <p>
                 {webcam.errorMessage ??
                   (webcam.status === "requesting"
@@ -232,8 +235,8 @@ export function DocumentDropzone({
                 webcam.status === "error") && (
                 <button
                   type="button"
-                  onClick={() => webcam.startCamera("environment")}
-                  className="rounded-lg bg-brand-forest px-3 py-1.5 font-semibold text-white hover:bg-brand-forestHover"
+                  onClick={() => void webcam.startCamera("environment")}
+                  className="rounded-lg bg-date2-midnight px-3 py-1.5 font-bold text-date2-white hover:bg-date2-deepIndigo"
                 >
                   Retry Camera
                 </button>
@@ -242,10 +245,10 @@ export function DocumentDropzone({
           )}
         </div>
       ) : file ? (
-        <div className="rounded-2xl border border-brand-border bg-brand-ice/45 p-4">
+        <div className="rounded-[16px] border border-date2-paleLavender bg-date2-lavenderMist/60 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             {previewUrl ? (
-              <div className="h-28 w-full overflow-hidden rounded-xl border border-brand-border bg-white sm:w-40 shrink-0">
+              <div className="h-28 w-full shrink-0 overflow-hidden rounded-xl border border-date2-border bg-date2-white sm:w-40">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
@@ -254,29 +257,29 @@ export function DocumentDropzone({
                 />
               </div>
             ) : (
-              <div className="flex h-28 w-full shrink-0 flex-col items-center justify-center rounded-xl border border-brand-border bg-white text-brand-forest sm:w-40">
+              <div className="flex h-28 w-full shrink-0 flex-col items-center justify-center rounded-xl border border-date2-border bg-date2-white text-date2-deepIndigo sm:w-40">
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.8"
-                  className="h-8 w-8 text-brand-mint"
+                  className="h-8 w-8 text-date2-violet"
                 >
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                <span className="mt-1 text-[11px] font-semibold">PDF File</span>
+                <span className="mt-1 text-[11px] font-bold">PDF File</span>
               </div>
             )}
 
             <div className="min-w-0 flex-1 space-y-2">
               <div>
-                <p className="truncate text-sm font-semibold text-brand-ink">
+                <p className="truncate text-sm font-bold text-date2-ink">
                   {file.name}
                 </p>
-                <p className="text-xs text-brand-muted">
-                  {formatFileSize(file.size)} · Ready for review
+                <p className="text-xs text-date2-slate">
+                  {formatFileSize(file.size)} · Ready in volatile memory ✓
                 </p>
               </div>
 
@@ -285,7 +288,7 @@ export function DocumentDropzone({
                   type="button"
                   disabled={disabled}
                   onClick={() => inputRef.current?.click()}
-                  className="rounded-xl border border-brand-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-forest transition-colors hover:bg-brand-frost focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mint disabled:opacity-50"
+                  className="rounded-xl border border-date2-softBorder bg-date2-white px-3 py-1.5 text-xs font-bold text-date2-deepIndigo transition-colors hover:bg-date2-lavenderMist focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet disabled:opacity-50"
                 >
                   Replace File
                 </button>
@@ -296,7 +299,7 @@ export function DocumentDropzone({
                     onError?.(null);
                     onFileChange(null);
                   }}
-                  className="rounded-xl border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:opacity-50"
+                  className="rounded-xl border border-rose-200 bg-date2-white px-3 py-1.5 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:opacity-50"
                 >
                   Remove File
                 </button>
@@ -312,15 +315,15 @@ export function DocumentDropzone({
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-5 py-7 text-center transition-colors ${
+          className={`flex flex-col items-center justify-center rounded-[16px] border-2 border-dashed px-5 py-7 text-center transition-colors ${
             error
               ? "border-rose-300 bg-rose-50/40"
               : isDragging
-                ? "border-brand-mint bg-brand-ice"
-                : "border-brand-border bg-brand-canvas/70 hover:border-brand-mint hover:bg-brand-ice/40"
+                ? "border-date2-violet bg-date2-lavenderMist"
+                : "border-date2-softBorder bg-date2-canvas hover:border-date2-violet hover:bg-date2-lavenderMist/40"
           }`}
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-brand-forest shadow-sm border border-brand-border/70">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-date2-border bg-date2-white text-date2-deepIndigo shadow-sm">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -337,28 +340,28 @@ export function DocumentDropzone({
             </svg>
           </span>
 
-          <p className="mt-3 text-sm font-medium text-brand-ink">
+          <p className="mt-3 text-sm font-bold text-date2-ink">
             Drag and drop your file here
           </p>
-          <p className="mt-1 text-xs text-brand-muted">{helperText}</p>
+          <p className="mt-1 text-xs text-date2-slate">{helperText}</p>
 
           <button
             type="button"
             disabled={disabled}
             onClick={() => inputRef.current?.click()}
-            className="mt-4 rounded-xl border border-brand-border bg-white px-4 py-2 text-xs font-semibold text-brand-forest shadow-sm transition-colors hover:bg-brand-ice focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mint disabled:opacity-50"
+            className="mt-4 rounded-xl border border-date2-softBorder bg-date2-white px-4 py-2 text-xs font-bold text-date2-deepIndigo shadow-sm transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet disabled:opacity-50"
           >
             Browse Files
           </button>
 
-          <p className="mt-2.5 text-[11px] text-brand-muted">
+          <p className="mt-2.5 text-[11px] text-date2-muted">
             JPG, PNG, WebP or PDF · Max 10 MB
           </p>
         </div>
       )}
 
       {error && (
-        <p role="alert" className="text-xs font-medium text-rose-600">
+        <p role="alert" className="text-xs font-bold text-rose-600">
           {error}
         </p>
       )}

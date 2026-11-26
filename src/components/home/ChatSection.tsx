@@ -6,8 +6,11 @@ import type {
   ChatConnectionStatus,
   ChatConversation,
   ChatMessage,
+  DatePlanChatPayload,
 } from "@/services/chat/chatService";
 import { ProfileAvatar } from "./ProfileAvatar";
+import { AiAssistantPanel } from "./workspace/AiAssistantPanel";
+import { DatePlannerDrawer } from "./workspace/DatePlannerDrawer";
 
 interface ChatSectionProps {
   conversations: ChatConversation[];
@@ -20,9 +23,28 @@ interface ChatSectionProps {
   loadError: string | null;
   isMock: boolean;
   onRetryLoad: () => void;
-  onSendMessage: (conversationId: string, content: string) => boolean;
+  onSendMessage: (
+    conversationId: string,
+    content: string,
+    options?: {
+      isEphemeral?: boolean;
+      type?: "text" | "date_plan";
+      datePlan?: DatePlanChatPayload;
+    }
+  ) => boolean;
+  onRetryMessage?: (conversationId: string, clientMessageId: string) => void;
   onTypingChange: (conversationId: string, isTyping: boolean) => void;
   onPlayGameWithMatch: (conversationId: string) => void;
+  onToggleVanishMode: (
+    conversationId: string,
+    nextEnabled: boolean
+  ) => Promise<void>;
+  vanishToggling?: boolean;
+  vanishError?: string | null;
+  onStartVideoCall: (conversation: ChatConversation) => void;
+  onSimulateIncomingCall?: (conversation: ChatConversation) => void;
+  startingCall?: boolean;
+  callError?: string | null;
 }
 
 function formatMessageTime(iso?: string): string {
@@ -49,16 +71,30 @@ export function ChatSection({
   isMock,
   onRetryLoad,
   onSendMessage,
+  onRetryMessage,
   onTypingChange,
   onPlayGameWithMatch,
+  onToggleVanishMode,
+  vanishToggling = false,
+  vanishError = null,
+  onStartVideoCall,
+  onSimulateIncomingCall,
+  startingCall = false,
+  callError = null,
 }: ChatSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [draft, setDraft] = useState("");
   const [draftError, setDraftError] = useState<string | null>(null);
   const [mobileShowThread, setMobileShowThread] = useState(false);
 
+  // Feature 5 Workspace Panels
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [datePlannerOpen, setDatePlannerOpen] = useState(false);
+  const [copyBlockedNotice, setCopyBlockedNotice] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filteredConversations = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -75,22 +111,43 @@ export function ChatSection({
     [conversations, selectedConversationId]
   );
 
-  const activeMessages: ChatMessage[] = useMemo(
-    () => activeConversation?.messages ?? [],
-    [activeConversation]
-  );
+  const isVanishActive = Boolean(activeConversation?.vanishEnabled);
+
+  // In Vanish Mode show only ephemeral session messages; otherwise show normal history
+  const displayedMessages: ChatMessage[] = useMemo(() => {
+    const all = activeConversation?.messages ?? [];
+    if (isVanishActive) {
+      return all.filter((m) => m.isEphemeral);
+    }
+    return all.filter((m) => !m.isEphemeral);
+  }, [activeConversation, isVanishActive]);
 
   useEffect(() => {
     if (selectedConversationId) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [selectedConversationId, activeMessages.length]);
+  }, [selectedConversationId, displayedMessages.length]);
 
   useEffect(() => {
     if (selectedConversationId) {
       setMobileShowThread(true);
     }
   }, [selectedConversationId]);
+
+  useEffect(() => {
+    return () => {
+      if (copyNoticeTimerRef.current) clearTimeout(copyNoticeTimerRef.current);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, []);
+
+  const showCopyRestrictedFeedback = () => {
+    setCopyBlockedNotice(true);
+    if (copyNoticeTimerRef.current) clearTimeout(copyNoticeTimerRef.current);
+    copyNoticeTimerRef.current = setTimeout(() => {
+      setCopyBlockedNotice(false);
+    }, 2200);
+  };
 
   const handleOpenConversation = (id: string) => {
     onSelectConversation(id);
@@ -107,7 +164,9 @@ export function ChatSection({
     }
 
     setDraftError(null);
-    const sent = onSendMessage(activeConversation.id, trimmed);
+    const sent = onSendMessage(activeConversation.id, trimmed, {
+      isEphemeral: isVanishActive,
+    });
     if (sent) {
       setDraft("");
       onTypingChange(activeConversation.id, false);
@@ -140,7 +199,7 @@ export function ChatSection({
       {isMock && (
         <StatusBanner
           variant="info"
-          message="Local test chat mode active. Connect the Date² backend WebSocket (/v1/chat/stream) for live multi-user messaging."
+          message="Local test chat mode active. Connect the Date² backend for live messaging, AI responses, and WebRTC signaling."
         />
       )}
 
@@ -160,6 +219,9 @@ export function ChatSection({
         />
       )}
 
+      {vanishError && <StatusBanner variant="error" message={vanishError} />}
+      {callError && <StatusBanner variant="error" message={callError} />}
+
       {(connectionStatus === "reconnecting" || connectionStatus === "error") && (
         <StatusBanner
           variant="warning"
@@ -171,22 +233,22 @@ export function ChatSection({
         />
       )}
 
-      <div className="grid min-h-[540px] grid-cols-1 overflow-hidden rounded-3xl border border-brand-border bg-white shadow-card lg:grid-cols-12">
+      <div className="grid min-h-[580px] grid-cols-1 overflow-hidden rounded-3xl border border-date2-border bg-date2-white font-helvetica shadow-card lg:grid-cols-12">
         {/* LEFT SIDE: Conversation Sidebar */}
         <aside
-          className={`flex flex-col border-b border-brand-border lg:col-span-4 lg:border-b-0 lg:border-r ${
+          className={`flex flex-col border-b border-date2-border lg:col-span-3 lg:border-b-0 lg:border-r ${
             mobileShowThread ? "hidden lg:flex" : "flex"
           }`}
         >
-          <div className="border-b border-brand-border/70 p-4 space-y-3">
+          <div className="space-y-3 border-b border-date2-border p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-brand-ink">Messages</h2>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-muted">
+              <h2 className="text-base font-bold text-date2-ink">Messages</h2>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-date2-slate">
                 <span
                   aria-hidden="true"
                   className={`h-2 w-2 rounded-full ${
                     connectionStatus === "connected"
-                      ? "bg-brand-mint"
+                      ? "bg-date2-violet"
                       : connectionStatus === "connecting" ||
                           connectionStatus === "reconnecting"
                         ? "bg-amber-500 animate-pulse"
@@ -203,31 +265,43 @@ export function ChatSection({
               </span>
             </div>
 
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search conversations..."
-              aria-label="Search conversations"
-              className="auth-input-base py-2 text-xs"
-            />
+            <div className="relative">
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search conversations..."
+                aria-label="Search conversations"
+                className="date2-input-base py-2 pr-14 text-xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-date2-violet hover:bg-date2-lavenderMist"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-brand-border/50">
+          <div className="flex-1 divide-y divide-date2-border/60 overflow-y-auto">
             {loading ? (
               <div className="space-y-3 p-4">
                 {[1, 2, 3].map((n) => (
                   <div key={n} className="flex items-center gap-3">
-                    <div className="h-11 w-11 animate-pulse rounded-full bg-brand-ice" />
+                    <div className="h-11 w-11 animate-pulse rounded-full bg-date2-lavenderMist" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-3.5 w-24 animate-pulse rounded bg-brand-ice" />
-                      <div className="h-3 w-40 animate-pulse rounded bg-brand-canvas" />
+                      <div className="h-3.5 w-24 animate-pulse rounded bg-date2-lavenderMist" />
+                      <div className="h-3 w-40 animate-pulse rounded bg-date2-canvas" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-6 text-center text-xs text-brand-muted">
+              <div className="p-6 text-center text-xs text-date2-slate">
                 {searchQuery
                   ? "No conversations match your search."
                   : "No matches yet. Like profiles in Match to start a conversation."}
@@ -242,8 +316,8 @@ export function ChatSection({
                     onClick={() => handleOpenConversation(conv.id)}
                     className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
                       isSelected
-                        ? "bg-brand-ice/80"
-                        : "hover:bg-brand-canvas"
+                        ? "bg-date2-lavenderMist"
+                        : "hover:bg-date2-canvas"
                     }`}
                   >
                     <ProfileAvatar
@@ -254,22 +328,24 @@ export function ChatSection({
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-sm font-semibold text-brand-ink">
+                        <span className="truncate text-sm font-semibold text-date2-ink">
                           {conv.participant.name}
                         </span>
                         {conv.lastMessageAt && (
-                          <span className="shrink-0 text-[11px] text-brand-muted">
+                          <span className="shrink-0 text-[11px] text-date2-slate">
                             {formatMessageTime(conv.lastMessageAt)}
                           </span>
                         )}
                       </div>
 
                       <div className="mt-0.5 flex items-center justify-between gap-2">
-                        <p className="truncate text-xs text-brand-muted">
-                          {conv.lastMessage ?? "Say hello!"}
+                        <p className="truncate text-xs text-date2-slate">
+                          {conv.vanishEnabled
+                            ? "Vanish Mode Active"
+                            : conv.lastMessage ?? "Say hello!"}
                         </p>
                         {conv.unreadCount > 0 && (
-                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-forest px-1.5 text-[10px] font-bold text-white">
+                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-date2-midnight px-1.5 text-[10px] font-bold text-date2-white">
                             {conv.unreadCount}
                           </span>
                         )}
@@ -282,15 +358,15 @@ export function ChatSection({
           </div>
         </aside>
 
-        {/* RIGHT SIDE: Active Conversation */}
-        <section
-          className={`flex flex-col lg:col-span-8 ${
+        {/* CENTER/RIGHT: Active Conversation + Optional AI Assistant Sidebar */}
+        <div
+          className={`flex flex-col lg:flex-row lg:col-span-9 ${
             mobileShowThread ? "flex" : "hidden lg:flex"
           }`}
         >
           {!activeConversation ? (
             <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-ice text-brand-forest">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-date2-lavenderMist text-date2-midnight">
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 24 24"
@@ -302,183 +378,479 @@ export function ChatSection({
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
               </div>
-              <h3 className="mt-3 text-base font-bold text-brand-ink">
+              <h3 className="mt-3 text-base font-bold text-date2-ink">
                 Select a conversation
               </h3>
-              <p className="mt-1 max-w-xs text-xs text-brand-muted">
-                Choose a match from the left to view your messages or invite
-                them to play a game.
+              <p className="mt-1 max-w-xs text-xs text-date2-slate">
+                Choose a match from the left to message, plan a date, turn on
+                Vanish Mode, or start a video call.
               </p>
             </div>
           ) : (
             <>
-              {/* Active Conversation Header */}
-              <header className="flex items-center justify-between gap-3 border-b border-brand-border/70 px-4 py-3.5 sm:px-6">
-                <div className="flex items-center gap-3 min-w-0">
-                  <button
-                    type="button"
-                    onClick={() => setMobileShowThread(false)}
-                    aria-label="Back to conversations"
-                    className="rounded-lg border border-brand-border p-1.5 text-brand-forest hover:bg-brand-ice lg:hidden"
-                  >
-                    <svg
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      className="h-4 w-4"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-
-                  <ProfileAvatar
-                    name={activeConversation.participant.name}
-                    photoUrl={activeConversation.participant.photoUrl}
-                    size="sm"
-                  />
-
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-brand-ink">
-                      {activeConversation.participant.name}
-                      {activeConversation.participant.age !== undefined
-                        ? `, ${activeConversation.participant.age}`
-                        : ""}
-                    </p>
-                    <p className="truncate text-xs text-brand-muted">
-                      {activeConversation.participant.location ??
-                        "Matched on Date²"}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onPlayGameWithMatch(activeConversation.id)}
-                  className="shrink-0 rounded-xl border border-brand-border bg-brand-ice/80 px-3 py-1.5 text-xs font-semibold text-brand-forest transition-colors hover:bg-brand-frost"
+              <section
+                className={`flex min-w-0 flex-1 flex-col transition-colors duration-200 ${
+                  isVanishActive ? "bg-[#10122E] text-white" : "bg-date2-white"
+                }`}
+              >
+                {/* Active Conversation Header + Feature 5 Tools */}
+                <header
+                  className={`flex flex-col gap-3 border-b px-4 py-3.5 sm:px-5 ${
+                    isVanishActive
+                      ? "border-white/15 bg-[#161942]"
+                      : "border-date2-border bg-date2-white"
+                  }`}
                 >
-                  Play Game
-                </button>
-              </header>
-
-              {/* Message History */}
-              <div className="flex-1 space-y-3 overflow-y-auto bg-brand-canvas/45 p-4 sm:p-6">
-                {activeMessages.length === 0 ? (
-                  <div className="flex h-full min-h-[260px] items-center justify-center text-center text-xs text-brand-muted">
-                    No messages yet. Say hello to{" "}
-                    {activeConversation.participant.name}!
-                  </div>
-                ) : (
-                  activeMessages.map((msg) => {
-                    const isMine = msg.senderId === currentUserId;
-
-                    if (msg.type === "game_result" && msg.gameResult) {
-                      return (
-                        <div
-                          key={msg.id}
-                          className="mx-auto max-w-sm rounded-2xl border border-brand-mint/70 bg-brand-ice p-3.5 text-center shadow-sm"
-                        >
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-brand-forest">
-                            {msg.gameResult.gameName} Result
-                          </p>
-                          {msg.gameResult.scoreLabel && (
-                            <p className="mt-1 text-base font-bold text-brand-ink">
-                              {msg.gameResult.scoreLabel}
-                            </p>
-                          )}
-                          <p className="mt-1 text-xs text-brand-muted">
-                            {msg.gameResult.summary}
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={msg.id}
-                        className={`flex flex-col ${
-                          isMine ? "items-end" : "items-start"
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setMobileShowThread(false)}
+                        aria-label="Back to conversations"
+                        className={`rounded-lg border p-1.5 lg:hidden ${
+                          isVanishActive
+                            ? "border-white/25 text-date2-paleLavender hover:bg-white/10"
+                            : "border-date2-border text-date2-midnight hover:bg-date2-lavenderMist"
                         }`}
                       >
-                        <div
-                          className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words sm:max-w-[70%] ${
-                            isMine
-                              ? "rounded-br-md bg-brand-forest text-white"
-                              : "rounded-bl-md border border-brand-border bg-white text-brand-ink shadow-sm"
-                          }`}
+                        <svg
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="h-4 w-4"
                         >
-                          {msg.content}
-                        </div>
-                        <div className="mt-1 flex items-center gap-1.5 px-1 text-[10px] text-brand-muted">
-                          {msg.createdAt && (
-                            <span>{formatMessageTime(msg.createdAt)}</span>
-                          )}
-                          {isMine && msg.status && (
-                            <span>
-                              ·{" "}
-                              {msg.status === "sending"
-                                ? "Sending..."
-                                : msg.status === "failed"
-                                  ? "Failed"
-                                  : "Sent"}
+                          <path
+                            fillRule="evenodd"
+                            d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+
+                      <ProfileAvatar
+                        name={activeConversation.participant.name}
+                        photoUrl={activeConversation.participant.photoUrl}
+                        size="sm"
+                      />
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p
+                            className={`truncate text-sm font-bold ${
+                              isVanishActive ? "text-white" : "text-date2-ink"
+                            }`}
+                          >
+                            {activeConversation.participant.name}
+                            {activeConversation.participant.age !== undefined
+                              ? `, ${activeConversation.participant.age}`
+                              : ""}
+                          </p>
+                          {isVanishActive && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-date2-limeMark/20 px-2 py-0.5 text-[10px] font-semibold text-date2-limeMark">
+                              Vanish Mode Active
                             </span>
                           )}
                         </div>
+                        <p
+                          className={`truncate text-xs ${
+                            isVanishActive
+                              ? "text-date2-paleLavender/85"
+                              : "text-date2-slate"
+                          }`}
+                        >
+                          {activeConversation.participant.location ??
+                            "Matched on Date²"}
+                        </p>
                       </div>
-                    );
-                  })
-                )}
+                    </div>
 
-                {partnerTypingLabel && (
-                  <div
-                    aria-live="polite"
-                    className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-white px-3 py-1.5 text-xs text-brand-muted shadow-sm"
-                  >
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-mint" />
-                    <span>{partnerTypingLabel} is typing...</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onPlayGameWithMatch(activeConversation.id)
+                      }
+                      className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        isVanishActive
+                          ? "border-white/20 bg-white/10 text-white hover:bg-white/20"
+                          : "border-date2-border bg-date2-lavenderMist text-date2-midnight hover:bg-date2-paleLavender/70"
+                      }`}
+                    >
+                      Play Game
+                    </button>
+                  </div>
+
+                  {/* Feature 5 Workspace Toolbar */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAiPanelOpen((prev) => !prev)}
+                      aria-expanded={aiPanelOpen}
+                      className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        aiPanelOpen
+                          ? "border-date2-midnight bg-date2-midnight text-date2-white"
+                          : isVanishActive
+                            ? "border-white/20 bg-white/10 text-white hover:bg-white/20"
+                            : "border-date2-border bg-date2-canvas text-date2-midnight hover:bg-date2-lavenderMist"
+                      }`}
+                    >
+                      AI Chat
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDatePlannerOpen(true)}
+                      className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        isVanishActive
+                          ? "border-white/20 bg-white/10 text-white hover:bg-white/20"
+                          : "border-date2-border bg-date2-canvas text-date2-midnight hover:bg-date2-lavenderMist"
+                      }`}
+                    >
+                      Date Planner
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={vanishToggling}
+                      aria-pressed={isVanishActive}
+                      onClick={() =>
+                        onToggleVanishMode(
+                          activeConversation.id,
+                          !isVanishActive
+                        )
+                      }
+                      className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                        isVanishActive
+                          ? "border-date2-limeMark bg-date2-limeMark/20 text-date2-limeMark hover:bg-date2-limeMark/30"
+                          : "border-date2-border bg-date2-canvas text-date2-midnight hover:bg-date2-lavenderMist"
+                      }`}
+                    >
+                      {vanishToggling
+                        ? "Updating..."
+                        : isVanishActive
+                          ? "Exit Vanish Mode"
+                          : "Vanish Mode"}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={startingCall}
+                      onClick={() => onStartVideoCall(activeConversation)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-date2-midnight px-3 py-1.5 text-xs font-semibold text-date2-white shadow-sm transition-colors hover:bg-date2-deepIndigo disabled:opacity-60"
+                    >
+                      {startingCall ? "Calling..." : "Video Call"}
+                    </button>
+
+                    {isMock && onSimulateIncomingCall && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSimulateIncomingCall(activeConversation)
+                        }
+                        className={`inline-flex items-center gap-1 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                          isVanishActive
+                            ? "border-white/20 text-date2-paleLavender hover:bg-white/10"
+                            : "border-date2-border text-date2-slate hover:bg-date2-lavenderMist"
+                        }`}
+                      >
+                        Test Incoming Call
+                      </button>
+                    )}
+                  </div>
+                </header>
+
+                {/* Vanish Mode Notice */}
+                {isVanishActive && (
+                  <div className="border-b border-white/10 bg-[#1B1F4F] px-4 py-2 text-xs text-date2-paleLavender">
+                    <strong>Vanish Mode Active:</strong> Messages sent here are
+                    temporary and will be cleared when Vanish Mode is turned off
+                    or your session ends. Normal chat history remains preserved.
                   </div>
                 )}
 
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Composer */}
-              <div className="border-t border-brand-border/70 bg-white p-3 sm:p-4">
-                {draftError && (
-                  <p role="alert" className="mb-2 text-xs font-medium text-rose-600">
-                    {draftError}
-                  </p>
-                )}
-                <div className="flex items-end gap-2.5">
-                  <textarea
-                    rows={1}
-                    value={draft}
-                    onChange={(e) => handleDraftChange(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    placeholder={`Message ${activeConversation.participant.name}... (Enter to send, Shift+Enter for new line)`}
-                    aria-label="Message input"
-                    className="auth-input-base max-h-28 min-h-[42px] flex-1 resize-none py-2.5"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSend}
-                    className="inline-flex h-[42px] shrink-0 items-center justify-center rounded-xl bg-brand-forest px-4 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/35"
+                {copyBlockedNotice && (
+                  <div
+                    role="status"
+                    className="border-b border-amber-400/30 bg-amber-950/60 px-4 py-1.5 text-center text-[11px] font-medium text-amber-200"
                   >
-                    Send
-                  </button>
+                    Copying temporary Vanish Mode messages is restricted.
+                  </div>
+                )}
+
+                {/* Message History */}
+                <div
+                  onCopy={
+                    isVanishActive
+                      ? (e) => {
+                          e.preventDefault();
+                          showCopyRestrictedFeedback();
+                        }
+                      : undefined
+                  }
+                  onContextMenu={
+                    isVanishActive
+                      ? (e) => {
+                          e.preventDefault();
+                          showCopyRestrictedFeedback();
+                        }
+                      : undefined
+                  }
+                  className={`flex-1 space-y-3 overflow-y-auto p-4 sm:p-5 ${
+                    isVanishActive
+                      ? "select-none bg-[#10122E]"
+                      : "bg-date2-canvas/60"
+                  }`}
+                >
+                  {displayedMessages.length === 0 ? (
+                    <div
+                      className={`flex h-full min-h-[260px] items-center justify-center text-center text-xs ${
+                        isVanishActive
+                          ? "text-date2-paleLavender/80"
+                          : "text-date2-slate"
+                      }`}
+                    >
+                      {isVanishActive
+                        ? `Vanish Mode is active. Send a temporary message to ${activeConversation.participant.name}.`
+                        : `No messages yet. Say hello to ${activeConversation.participant.name}!`}
+                    </div>
+                  ) : (
+                    displayedMessages.map((msg) => {
+                      const isMine = msg.senderId === currentUserId;
+
+                      if (msg.type === "game_result" && msg.gameResult) {
+                        return (
+                          <div
+                            key={msg.id}
+                            className="mx-auto max-w-sm rounded-2xl border border-date2-paleLavender bg-date2-lavenderMist p-3.5 text-center text-date2-ink shadow-sm"
+                          >
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-date2-violet">
+                              {msg.gameResult.gameName} Result
+                            </p>
+                            {msg.gameResult.scoreLabel && (
+                              <p className="mt-1 text-base font-bold text-date2-ink">
+                                {msg.gameResult.scoreLabel}
+                              </p>
+                            )}
+                            <p className="mt-1 text-xs text-date2-slate">
+                              {msg.gameResult.summary}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      if (msg.type === "date_plan" && msg.datePlan) {
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`max-w-md space-y-2.5 rounded-2xl border p-4 shadow-sm ${
+                              isMine ? "ml-auto" : "mr-auto"
+                            } border-date2-paleLavender bg-date2-lavenderMist text-date2-ink`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-date2-violet">
+                                Date Plan · {msg.datePlan.vibe}
+                              </span>
+                              <span className="rounded-full bg-date2-white px-2 py-0.5 text-[10px] font-semibold text-date2-slate">
+                                {msg.datePlan.budget}
+                              </span>
+                            </div>
+                            <p className="text-sm font-bold text-date2-ink">
+                              {msg.datePlan.planTitle}
+                            </p>
+                            <p className="text-xs text-date2-slate">
+                              {msg.datePlan.location} · {msg.datePlan.schedule}
+                            </p>
+                            <ul className="space-y-1.5 pt-1">
+                              {msg.datePlan.items.map((stop) => (
+                                <li
+                                  key={stop.id}
+                                  className="rounded-xl border border-date2-border bg-date2-white px-3 py-2 text-xs"
+                                >
+                                  <p className="font-semibold text-date2-ink">
+                                    {stop.activityName}
+                                  </p>
+                                  <p className="text-[11px] text-date2-slate">
+                                    {stop.location} · {stop.suggestedTime}
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex flex-col ${
+                            isMine ? "items-end" : "items-start"
+                          }`}
+                        >
+                          <div
+                            className={`max-w-[82%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed sm:max-w-[70%] ${
+                              isVanishActive
+                                ? isMine
+                                  ? "rounded-br-md border border-date2-softPeriwinkle/50 bg-date2-violet text-white"
+                                  : "rounded-bl-md border border-white/15 bg-[#1E2257] text-white"
+                                : isMine
+                                  ? "rounded-br-md bg-date2-midnight text-date2-white"
+                                  : "rounded-bl-md border border-date2-border bg-date2-white text-date2-ink shadow-sm"
+                            }`}
+                          >
+                            {msg.content}
+                          </div>
+                          <div
+                            className={`mt-1 flex items-center gap-1.5 px-1 text-[10px] ${
+                              isVanishActive
+                                ? "text-date2-paleLavender/75"
+                                : "text-date2-slate"
+                            }`}
+                          >
+                            {msg.createdAt && (
+                              <span>{formatMessageTime(msg.createdAt)}</span>
+                            )}
+                            {msg.isEphemeral && <span>· Temporary</span>}
+                            {isMine && msg.status && (
+                              <span>
+                                ·{" "}
+                                {msg.status === "sending"
+                                  ? "Sending..."
+                                  : msg.status === "failed"
+                                    ? "Failed"
+                                    : "Sent"}
+                              </span>
+                            )}
+                            {isMine &&
+                              msg.status === "failed" &&
+                              msg.clientMessageId &&
+                              onRetryMessage && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onRetryMessage(
+                                      activeConversation.id,
+                                      msg.clientMessageId!
+                                    )
+                                  }
+                                  className={`font-semibold underline underline-offset-2 ${
+                                    isVanishActive
+                                      ? "text-date2-limeMark"
+                                      : "text-date2-violet hover:text-date2-midnight"
+                                  }`}
+                                >
+                                  Retry
+                                </button>
+                              )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {partnerTypingLabel && (
+                    <div
+                      aria-live="polite"
+                      className="inline-flex items-center gap-2 rounded-full border border-date2-border bg-date2-white px-3 py-1.5 text-xs text-date2-slate shadow-sm"
+                    >
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-date2-violet" />
+                      <span>{partnerTypingLabel} is typing...</span>
+                    </div>
+                  )}
+
+                  <div ref={messagesEndRef} />
                 </div>
-              </div>
+
+                {/* Composer */}
+                <div
+                  className={`border-t p-3 sm:p-4 ${
+                    isVanishActive
+                      ? "border-white/15 bg-[#161942]"
+                      : "border-date2-border bg-date2-white"
+                  }`}
+                >
+                  {draftError && (
+                    <p
+                      role="alert"
+                      className="mb-2 text-xs font-medium text-rose-500"
+                    >
+                      {draftError}
+                    </p>
+                  )}
+                  <div className="flex items-end gap-2.5">
+                    <textarea
+                      rows={1}
+                      value={draft}
+                      onChange={(e) => handleDraftChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      placeholder={
+                        isVanishActive
+                          ? `Send temporary message to ${activeConversation.participant.name}...`
+                          : `Message ${activeConversation.participant.name}... (Enter to send, Shift+Enter for new line)`
+                      }
+                      aria-label="Message input"
+                      className={`max-h-28 min-h-[42px] flex-1 resize-none rounded-xl border px-3.5 py-2.5 text-sm transition-colors focus:outline-none focus:ring-4 ${
+                        isVanishActive
+                          ? "border-white/20 bg-[#10122E] text-white placeholder:text-date2-paleLavender/65 focus:border-date2-softPeriwinkle focus:ring-date2-softPeriwinkle/25"
+                          : "border-date2-border bg-date2-white text-date2-ink placeholder:text-date2-muted focus:border-date2-violet focus:ring-date2-paleLavender"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSend}
+                      className={`inline-flex h-[42px] shrink-0 items-center justify-center rounded-xl px-4 text-sm font-semibold shadow-soft transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender ${
+                        isVanishActive
+                          ? "bg-date2-limeMark text-date2-midnight hover:bg-date2-limeMark/90"
+                          : "bg-date2-midnight text-date2-white hover:bg-date2-deepIndigo"
+                      }`}
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* Collapsible Right-hand AI Assistant Sidebar */}
+              {aiPanelOpen && (
+                <div className="w-full lg:w-72 xl:w-80 shrink-0">
+                  <AiAssistantPanel
+                    conversation={activeConversation}
+                    currentUserId={currentUserId}
+                    onInsertSuggestion={(text) => {
+                      setDraft(text);
+                      setDraftError(null);
+                    }}
+                    onClose={() => setAiPanelOpen(false)}
+                  />
+                </div>
+              )}
             </>
           )}
-        </section>
+        </div>
       </div>
+
+      {/* Date Planner Drawer */}
+      {datePlannerOpen && activeConversation && (
+        <DatePlannerDrawer
+          conversationId={activeConversation.id}
+          matchName={activeConversation.participant.name}
+          initialLocation={activeConversation.participant.location}
+          onSharePlan={(plan) => {
+            onSendMessage(
+              activeConversation.id,
+              `Date Plan: ${plan.planTitle} (${plan.schedule})`,
+              {
+                type: "date_plan",
+                datePlan: plan,
+                isEphemeral: isVanishActive,
+              }
+            );
+          }}
+          onClose={() => setDatePlannerOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -104,6 +104,18 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
 function deriveOverallStatus(state: MockKycState): KycOverallStatus {
   if (
+    state.faceScanStatus === "REJECTED" ||
+    state.documentStatus === "REJECTED"
+  ) {
+    return "REJECTED";
+  }
+  if (
+    state.faceScanStatus === "RETRY_REQUIRED" ||
+    state.documentStatus === "RETRY_REQUIRED"
+  ) {
+    return "RETRY_REQUIRED";
+  }
+  if (
     state.faceScanStatus === "FAILED" ||
     state.documentStatus === "FAILED"
   ) {
@@ -238,10 +250,29 @@ export const mockSecurityService: SecurityService = {
 
     const current = readPersistedDevKycState();
     const now = new Date().toISOString();
+    const refUpper = payload.documentReference?.trim().toUpperCase() ?? "";
+
+    let docStatus: StepVerificationStatus = "SUBMITTED";
+    let statusMessage =
+      "Document submission recorded in local UI test mode. Actual government ID verification requires the backend service.";
+
+    if (refUpper.startsWith("REJECT")) {
+      docStatus = "REJECTED";
+      statusMessage =
+        "Document details could not be validated. Re-upload clear ID photos.";
+    } else if (refUpper.startsWith("RETRY")) {
+      docStatus = "RETRY_REQUIRED";
+      statusMessage =
+        "Captured document quality could not be confirmed. Retake and resubmit your ID.";
+    } else if (refUpper.startsWith("FAIL")) {
+      docStatus = "FAILED";
+      statusMessage =
+        "Document verification failed in local test trigger. Please retry submission.";
+    }
 
     const updated: MockKycState = {
       ...current,
-      documentStatus: "SUBMITTED",
+      documentStatus: docStatus,
       documentCountry: payload.country,
       documentType: payload.documentType,
       documentSubmittedAt: now,
@@ -250,13 +281,12 @@ export const mockSecurityService: SecurityService = {
     writePersistedDevKycState(updated);
 
     return {
-      status: "SUBMITTED",
+      status: docStatus,
       overallStatus: deriveOverallStatus(updated),
-      submissionId: "mock-doc-submission",
+      submissionId: `mock-doc-${Date.now()}`,
       submittedAt: now,
       isMockResponse: true,
-      message:
-        "Document submission recorded in local UI test mode. Actual government ID verification requires the backend service.",
+      message: statusMessage,
     };
   },
 

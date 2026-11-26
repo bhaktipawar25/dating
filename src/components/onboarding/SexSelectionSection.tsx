@@ -86,18 +86,38 @@ export function SexSelectionSection({
   error,
   disabled = false,
 }: SexSelectionSectionProps) {
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (disabled) return;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = SEX_OPTIONS[(index + 1) % SEX_OPTIONS.length];
+      onChange(next.id);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev =
+        SEX_OPTIONS[(index - 1 + SEX_OPTIONS.length) % SEX_OPTIONS.length];
+      onChange(prev.id);
+    }
+  };
+
   return (
-    <section aria-labelledby="sex-section-heading" className="space-y-4">
+    <section
+      aria-labelledby="sex-section-heading"
+      className="space-y-4 font-helvetica"
+    >
       <div>
         <h2
           id="sex-section-heading"
-          className="text-xl font-bold tracking-tight text-brand-ink sm:text-2xl"
+          className="text-2xl font-bold tracking-tight text-date2-ink sm:text-[26px]"
         >
           Tell Us About Yourself
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-brand-muted">
-          Help us understand you better so we can create a more meaningful
-          dating experience.
+        <p className="mt-1 text-sm leading-relaxed text-date2-slate">
+          Help us understand you better so we can create a more respectful,
+          affirming dating experience.
         </p>
       </div>
 
@@ -106,7 +126,7 @@ export function SexSelectionSection({
         aria-label="Select your sex"
         className="grid grid-cols-2 gap-3 sm:grid-cols-4"
       >
-        {SEX_OPTIONS.map((option) => {
+        {SEX_OPTIONS.map((option, index) => {
           const isSelected = value === option.id;
           return (
             <button
@@ -116,23 +136,28 @@ export function SexSelectionSection({
               aria-checked={isSelected}
               disabled={disabled}
               onClick={() => onChange(option.id)}
-              className={`group flex min-h-[116px] flex-col items-center justify-center gap-2.5 rounded-2xl border p-4 text-center transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/30 disabled:cursor-not-allowed disabled:opacity-60 ${
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              className={`group flex min-h-[118px] flex-col items-center justify-center gap-2.5 rounded-[18px] border p-4 text-center transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60 ${
                 isSelected
-                  ? "border-brand-forest bg-brand-ice shadow-soft ring-2 ring-brand-mint/40"
-                  : "border-brand-border bg-white hover:border-brand-mint hover:bg-brand-canvas"
+                  ? "border-date2-violet bg-date2-lavenderMist shadow-indigoSoft ring-2 ring-date2-paleLavender"
+                  : "border-date2-border bg-date2-white hover:border-date2-lightPeriwinkle hover:bg-date2-canvas"
               }`}
             >
               <span
                 className={`flex h-11 w-11 items-center justify-center rounded-2xl transition-colors ${
                   isSelected
-                    ? "bg-brand-forest text-white"
-                    : "bg-brand-ice text-brand-forest group-hover:bg-brand-frost"
+                    ? "bg-date2-midnight text-date2-limeMark"
+                    : "bg-date2-lavenderMist text-date2-deepIndigo group-hover:bg-date2-paleLavender"
                 }`}
               >
                 <SexIcon id={option.id} />
               </span>
 
-              <span className="text-sm font-semibold text-brand-ink">
+              <span
+                className={`text-sm font-bold ${
+                  isSelected ? "text-date2-midnight" : "text-date2-ink"
+                }`}
+              >
                 {option.label}
               </span>
             </button>
@@ -141,7 +166,7 @@ export function SexSelectionSection({
       </div>
 
       {error && (
-        <p role="alert" className="text-xs font-medium text-rose-600">
+        <p role="alert" className="text-xs font-bold text-rose-600">
           {error}
         </p>
       )}

@@ -130,10 +130,10 @@ export function OnboardingGuard({
 
   if (!authorized) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="flex flex-col items-center gap-3 rounded-3xl border border-brand-border bg-white px-8 py-7 text-center shadow-card">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand-mint border-t-brand-forest" />
-          <p className="text-sm font-medium text-brand-muted">
+      <div className="date2-auth-backdrop flex min-h-screen items-center justify-center px-4 font-helvetica">
+        <div className="flex flex-col items-center gap-3 rounded-[24px] border border-date2-border bg-date2-white px-8 py-7 text-center shadow-indigoCard">
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-date2-paleLavender border-t-date2-midnight" />
+          <p className="text-sm font-bold text-date2-slate">
             Checking your Date² account progress...
           </p>
         </div>

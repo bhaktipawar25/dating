@@ -34,17 +34,17 @@ export function ProfileVisibilitySection({
   return (
     <section
       aria-labelledby="profile-visibility-heading"
-      className="space-y-3 rounded-2xl border border-brand-border bg-brand-ice/45 p-4 sm:p-5"
+      className="space-y-3.5 rounded-[18px] border border-date2-border bg-date2-surface p-4 font-helvetica sm:p-5"
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3
             id="profile-visibility-heading"
-            className="text-base font-bold text-brand-ink"
+            className="text-base font-bold text-date2-ink"
           >
             Profile Visibility
           </h3>
-          <p className="mt-0.5 text-xs text-brand-muted">
+          <p className="mt-0.5 text-xs text-date2-slate">
             Control what appears on your Date² profile and who can discover you.
           </p>
         </div>
@@ -53,7 +53,7 @@ export function ProfileVisibilitySection({
           type="button"
           disabled={disabled || isSaving}
           onClick={onSaveChanges}
-          className="inline-flex shrink-0 items-center justify-center rounded-xl border border-brand-border bg-white px-3.5 py-2 text-xs font-semibold text-brand-forest shadow-sm transition-colors hover:bg-brand-frost focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mint disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl border border-date2-softBorder bg-date2-white px-3.5 py-2 text-xs font-bold text-date2-deepIndigo shadow-sm transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving ? "Saving..." : "Save Changes"}
         </button>
@@ -72,17 +72,28 @@ export function ProfileVisibilitySection({
           return (
             <div
               key={setting.key}
-              className={`flex items-center justify-between gap-4 rounded-xl border p-3.5 transition-colors ${
+              className={`flex items-center justify-between gap-4 rounded-[14px] border p-3.5 transition-colors ${
                 enabled
-                  ? "border-brand-mint/70 bg-white"
-                  : "border-brand-border/80 bg-brand-canvas/80"
+                  ? "border-date2-paleLavender bg-date2-white"
+                  : "border-date2-border bg-date2-canvas"
               }`}
             >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-brand-ink">
-                  {setting.label}
-                </p>
-                <p className="mt-0.5 text-xs leading-relaxed text-brand-muted">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-date2-ink">
+                    {setting.label}
+                  </p>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      enabled
+                        ? "bg-date2-lavenderMist text-date2-deepIndigo"
+                        : "bg-date2-surface text-date2-muted"
+                    }`}
+                  >
+                    {enabled ? "Visible" : "Hidden"}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs leading-relaxed text-date2-slate">
                   {setting.description}
                 </p>
               </div>
@@ -94,8 +105,8 @@ export function ProfileVisibilitySection({
                 aria-label={setting.label}
                 disabled={disabled || isSaving}
                 onClick={() => toggleSetting(setting.key)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-mint/30 disabled:cursor-not-allowed disabled:opacity-60 ${
-                  enabled ? "bg-brand-forest" : "bg-brand-border"
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60 ${
+                  enabled ? "bg-date2-midnight" : "bg-date2-softBorder"
                 }`}
               >
                 <span

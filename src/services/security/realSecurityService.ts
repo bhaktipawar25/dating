@@ -113,6 +113,9 @@ export const realSecurityService: SecurityService = {
     if (payload.backFile) {
       formData.append("backDocument", payload.backFile, payload.backFile.name);
     }
+    if (payload.documentReference?.trim()) {
+      formData.append("documentReference", payload.documentReference.trim());
+    }
 
     return new Promise<DocumentVerifyResponse>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
