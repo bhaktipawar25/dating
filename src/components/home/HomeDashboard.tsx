@@ -5,6 +5,12 @@ import Link from "next/link";
 import { Date2Logo } from "@/components/auth/Date2Logo";
 import { ProfileAccountMenu } from "@/components/auth/ProfileAccountMenu";
 import { registerLogoutCleanup } from "@/lib/auth/sessionCleanup";
+import {
+  STORAGE_KEYS,
+  getHomeUiState,
+  subscribeToStorageKey,
+  updateHomeUiState,
+} from "@/lib/storage/localStorageManager";
 import type { AuthUser } from "@/services/auth/types";
 import {
   ChatServiceError,
@@ -120,8 +126,12 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
       setIsChatMock(Boolean(response.isMockResponse));
 
       setSelectedConversationId((prev) => {
-        if (prev && response.conversations.some((c) => c.id === prev)) {
-          return prev;
+        const candidateId = prev ?? getHomeUiState().selectedConversationId;
+        if (
+          candidateId &&
+          response.conversations.some((c) => c.id === candidateId)
+        ) {
+          return candidateId;
         }
         return response.conversations[0]?.id ?? null;
       });
@@ -242,6 +252,23 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
   }, []);
 
   useEffect(() => {
+    const savedHome = getHomeUiState();
+    setActiveTab(savedHome.activeTab);
+    if (savedHome.selectedConversationId) {
+      setSelectedConversationId(savedHome.selectedConversationId);
+    }
+
+    const unsubHomeStorage = subscribeToStorageKey(
+      STORAGE_KEYS.HOME_STATE,
+      () => {
+        const latest = getHomeUiState();
+        setActiveTab(latest.activeTab);
+        if (latest.selectedConversationId !== null) {
+          setSelectedConversationId(latest.selectedConversationId);
+        }
+      }
+    );
+
     const controller = new AbortController();
     loadConversations(controller.signal);
 
@@ -258,19 +285,27 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
       setIncomingCall(null);
       setConversations([]);
       setSelectedConversationId(null);
+      setActiveTab("match");
     });
 
     return () => {
+      unsubHomeStorage();
       unregisterLogout();
       controller.abort();
       socketRef.current?.close();
     };
   }, [loadConversations, handleStreamEvent]);
 
+  const switchTab = useCallback((nextTab: DashboardTab) => {
+    setActiveTab(nextTab);
+    updateHomeUiState({ activeTab: nextTab });
+  }, []);
+
   const handleSelectConversation = useCallback((conversationId: string) => {
     setVanishError(null);
     setCallError(null);
     setSelectedConversationId(conversationId);
+    updateHomeUiState({ selectedConversationId: conversationId });
     setConversations((prev) =>
       prev.map((c) => {
         if (c.id === conversationId) {
@@ -555,13 +590,13 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
   ];
 
   return (
-    <div className="date2-auth-backdrop relative flex min-h-screen flex-col pb-20 font-helvetica text-date2-ink sm:pb-8">
+    <div className="date2-auth-backdrop relative flex min-h-screen flex-col pb-24 font-helvetica text-date2-ink sm:pb-8">
       {/* Persistent Date² Dashboard Header */}
       <header className="sticky top-0 z-30 border-b border-date2-border bg-date2-white/95 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-3 py-3 xs:px-4 sm:px-6 lg:px-10 desktop:max-w-[1400px]">
           <Link
             href="/home"
-            className="inline-flex items-center rounded-xl py-0.5 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+            className="inline-flex shrink-0 items-center rounded-xl py-0.5 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
           >
             <Date2Logo height={24} showContainer={false} />
           </Link>
@@ -579,7 +614,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                   type="button"
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => {
-                    setActiveTab(tab.id);
+                    switchTab(tab.id);
                     if (tab.id === "chat" && selectedConversationId) {
                       handleSelectConversation(selectedConversationId);
                     }
@@ -613,7 +648,89 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
       </header>
 
       {/* Main Content Area (All 3 panels remain mounted to preserve state across tabs) */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 xs:px-4 sm:px-6 sm:py-6 lg:px-10 desktop:max-w-[1400px]">
+        {/* Responsive Quick Overview Bar */}
+        <section
+          aria-label="Dashboard overview"
+          className="mb-4 grid grid-cols-3 gap-1.5 sm:mb-6 sm:gap-4"
+        >
+          <button
+            type="button"
+            onClick={() => switchTab("match")}
+            className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-center transition-all sm:justify-between sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left ${
+              activeTab === "match"
+                ? "border-date2-violet bg-date2-white shadow-indigoSoft"
+                : "border-date2-border bg-date2-white/80 hover:border-date2-lightPeriwinkle hover:bg-date2-white"
+            }`}
+          >
+            <div className="min-w-0">
+              <p className="hidden text-[11px] font-bold uppercase tracking-[0.08em] text-date2-deepIndigo sm:block">
+                Discover
+              </p>
+              <p className="truncate text-xs font-bold text-date2-ink sm:text-sm">
+                <span className="sm:hidden">Discover</span>
+                <span className="hidden sm:inline">Swipe &amp; Match</span>
+              </p>
+            </div>
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-date2-lavenderMist text-xs text-date2-midnight sm:h-8 sm:w-8 sm:rounded-xl sm:text-sm">
+              ♥
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              switchTab("chat");
+              if (selectedConversationId) {
+                handleSelectConversation(selectedConversationId);
+              }
+            }}
+            className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-center transition-all sm:justify-between sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left ${
+              activeTab === "chat"
+                ? "border-date2-violet bg-date2-white shadow-indigoSoft"
+                : "border-date2-border bg-date2-white/80 hover:border-date2-lightPeriwinkle hover:bg-date2-white"
+            }`}
+          >
+            <div className="min-w-0">
+              <p className="hidden text-[11px] font-bold uppercase tracking-[0.08em] text-date2-deepIndigo sm:block">
+                Messages
+              </p>
+              <p className="truncate text-xs font-bold text-date2-ink sm:text-sm">
+                <span className="sm:hidden">Messages</span>
+                <span className="hidden sm:inline">
+                  {conversations.length} Matches
+                  {totalUnread > 0 ? ` · ${totalUnread} unread` : ""}
+                </span>
+              </p>
+            </div>
+            <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-lg bg-date2-lavenderMist px-1.5 text-[11px] font-bold text-date2-midnight sm:h-8 sm:min-w-8 sm:rounded-xl sm:px-2 sm:text-xs">
+              {totalUnread > 0 ? totalUnread : "💬"}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => switchTab("game")}
+            className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-center transition-all sm:justify-between sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left ${
+              activeTab === "game"
+                ? "border-date2-violet bg-date2-white shadow-indigoSoft"
+                : "border-date2-border bg-date2-white/80 hover:border-date2-lightPeriwinkle hover:bg-date2-white"
+            }`}
+          >
+            <div className="min-w-0">
+              <p className="hidden text-[11px] font-bold uppercase tracking-[0.08em] text-date2-deepIndigo sm:block">
+                Icebreakers
+              </p>
+              <p className="truncate text-xs font-bold text-date2-ink sm:text-sm">
+                <span className="sm:hidden">Games</span>
+                <span className="hidden sm:inline">Play Games</span>
+              </p>
+            </div>
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-date2-lavenderMist text-[11px] font-bold text-date2-midnight sm:h-8 sm:w-8 sm:rounded-xl sm:text-xs">
+              ★
+            </span>
+          </button>
+        </section>
         <div className={activeTab === "match" ? "block" : "hidden"}>
           <MatchSection
             isActive={activeTab === "match"}
@@ -626,7 +743,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
               if (conversationId) {
                 handleSelectConversation(conversationId);
               }
-              setActiveTab("chat");
+              switchTab("chat");
             }}
           />
         </div>
@@ -653,7 +770,8 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
             }
             onPlayGameWithMatch={(convId) => {
               setSelectedConversationId(convId);
-              setActiveTab("game");
+              updateHomeUiState({ selectedConversationId: convId });
+              switchTab("game");
             }}
             onToggleVanishMode={handleToggleVanishMode}
             vanishToggling={vanishToggling}
@@ -680,12 +798,15 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
           <GameSection
             conversations={conversations}
             selectedConversationId={selectedConversationId}
-            onSelectConversation={setSelectedConversationId}
-            onGoToMatch={() => setActiveTab("match")}
+            onSelectConversation={(convId) => {
+              setSelectedConversationId(convId);
+              updateHomeUiState({ selectedConversationId: convId });
+            }}
+            onGoToMatch={() => switchTab("match")}
             onReturnToChat={async (convId) => {
               await loadConversations();
               handleSelectConversation(convId);
-              setActiveTab("chat");
+              switchTab("chat");
             }}
             onGameCompleted={() => {
               loadConversations();
@@ -697,7 +818,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
       {/* Responsive Mobile Bottom Navigation */}
       <nav
         aria-label="Mobile dashboard sections"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-date2-border bg-date2-white/95 px-4 py-2 backdrop-blur-md sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-date2-border bg-date2-white/95 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:hidden"
       >
         <div className="mx-auto grid max-w-md grid-cols-3 gap-2">
           {tabs.map((tab) => {
@@ -708,7 +829,7 @@ export function HomeDashboard({ user }: HomeDashboardProps) {
                 type="button"
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => {
-                  setActiveTab(tab.id);
+                  switchTab(tab.id);
                   if (tab.id === "chat" && selectedConversationId) {
                     handleSelectConversation(selectedConversationId);
                   }

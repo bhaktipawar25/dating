@@ -157,18 +157,18 @@ export function DatePlannerDrawer({
       role="dialog"
       aria-modal="true"
       aria-labelledby="date-planner-title"
-      className="fixed inset-0 z-50 flex justify-end bg-brand-forest/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex justify-end bg-date2-midnight/50 font-helvetica backdrop-blur-sm"
     >
-      <div className="flex h-full w-full max-w-xl flex-col bg-white shadow-card">
-        <header className="flex items-start justify-between gap-3 border-b border-brand-border px-5 py-4 sm:px-6">
+      <div className="flex h-full w-full max-w-xl flex-col bg-date2-white shadow-indigoCard">
+        <header className="flex items-start justify-between gap-3 border-b border-date2-border px-4 py-3.5 xs:px-5 xs:py-4 sm:px-6">
           <div>
             <h2
               id="date-planner-title"
-              className="text-lg font-bold text-brand-ink"
+              className="text-lg font-bold text-date2-ink"
             >
               Plan Your Perfect Date
             </h2>
-            <p className="mt-0.5 text-xs text-brand-muted">
+            <p className="mt-0.5 text-xs text-date2-slate">
               Build a tailored itinerary with {matchName} and share it in chat.
             </p>
           </div>
@@ -176,19 +176,19 @@ export function DatePlannerDrawer({
             type="button"
             aria-label="Close Date Planner"
             onClick={onClose}
-            className="rounded-xl border border-brand-border px-2.5 py-1 text-xs font-semibold text-brand-muted hover:bg-brand-ice hover:text-brand-ink"
+            className="shrink-0 rounded-xl border border-date2-border px-2.5 py-1 text-xs font-bold text-date2-slate hover:bg-date2-lavenderMist hover:text-date2-midnight"
           >
             Back to Chat
           </button>
         </header>
 
-        <div className="flex-1 space-y-6 overflow-y-auto p-5 sm:p-6">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] xs:p-5 sm:p-6">
           {formError && <StatusBanner variant="error" message={formError} />}
 
           <form onSubmit={handleGenerate} className="space-y-5">
             {/* 1. Budget */}
             <div className="space-y-2">
-              <span className="block text-xs font-bold uppercase tracking-wider text-brand-forest">
+              <span className="block text-xs font-bold uppercase tracking-wider text-date2-deepIndigo">
                 1. Budget
               </span>
               <div className="flex flex-wrap gap-2">
@@ -202,10 +202,10 @@ export function DatePlannerDrawer({
                         setCustomBudget("");
                         setBudgetPreset(preset);
                       }}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
                         selected
-                          ? "border-brand-forest bg-brand-forest text-white"
-                          : "border-brand-border bg-white text-brand-ink hover:bg-brand-ice"
+                          ? "border-date2-midnight bg-date2-midnight text-date2-white"
+                          : "border-date2-border bg-date2-white text-date2-ink hover:bg-date2-lavenderMist"
                       }`}
                     >
                       {preset}
@@ -219,7 +219,7 @@ export function DatePlannerDrawer({
                 onChange={(e) => setCustomBudget(e.target.value)}
                 placeholder="Or enter a custom budget (e.g. ₹2,500 total)"
                 aria-label="Custom budget"
-                className="auth-input-base text-xs"
+                className="date2-input-base text-xs"
               />
             </div>
 
@@ -227,7 +227,7 @@ export function DatePlannerDrawer({
             <div className="space-y-2">
               <label
                 htmlFor="date-planner-location"
-                className="block text-xs font-bold uppercase tracking-wider text-brand-forest"
+                className="block text-xs font-bold uppercase tracking-wider text-date2-deepIndigo"
               >
                 2. Location
               </label>
@@ -237,7 +237,7 @@ export function DatePlannerDrawer({
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Search or enter neighborhood / city..."
-                className="auth-input-base text-xs"
+                className="date2-input-base text-xs"
               />
               <div className="flex flex-wrap gap-1.5">
                 {LOCATION_SUGGESTIONS.map((city) => (
@@ -245,10 +245,10 @@ export function DatePlannerDrawer({
                     key={city}
                     type="button"
                     onClick={() => setLocation(city)}
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors ${
                       location.toLowerCase() === city.toLowerCase()
-                        ? "border-brand-mint bg-brand-ice text-brand-forest"
-                        : "border-brand-border bg-brand-canvas text-brand-muted hover:bg-brand-ice"
+                        ? "border-date2-violet bg-date2-lavenderMist text-date2-midnight"
+                        : "border-date2-border bg-date2-canvas text-date2-slate hover:bg-date2-lavenderMist"
                     }`}
                   >
                     {city}
@@ -259,7 +259,7 @@ export function DatePlannerDrawer({
 
             {/* 3. Date Vibe */}
             <div className="space-y-2">
-              <span className="block text-xs font-bold uppercase tracking-wider text-brand-forest">
+              <span className="block text-xs font-bold uppercase tracking-wider text-date2-deepIndigo">
                 3. Date Vibe
               </span>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -270,10 +270,10 @@ export function DatePlannerDrawer({
                       key={option}
                       type="button"
                       onClick={() => setVibe(option)}
-                      className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
+                      className={`rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
                         selected
-                          ? "border-brand-forest bg-brand-ice text-brand-forest ring-2 ring-brand-mint/35"
-                          : "border-brand-border bg-white text-brand-ink hover:bg-brand-canvas"
+                          ? "border-date2-midnight bg-date2-lavenderMist text-date2-midnight ring-2 ring-date2-paleLavender"
+                          : "border-date2-border bg-date2-white text-date2-ink hover:bg-date2-canvas"
                       }`}
                     >
                       {option}
@@ -285,14 +285,14 @@ export function DatePlannerDrawer({
 
             {/* 4. Schedule */}
             <div className="space-y-2">
-              <span className="block text-xs font-bold uppercase tracking-wider text-brand-forest">
+              <span className="block text-xs font-bold uppercase tracking-wider text-date2-deepIndigo">
                 4. Schedule
               </span>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                 <div>
                   <label
                     htmlFor="date-planner-date"
-                    className="mb-1 block text-[11px] font-medium text-brand-muted"
+                    className="mb-1 block text-[11px] font-bold text-date2-slate"
                   >
                     Preferred Date
                   </label>
@@ -301,13 +301,13 @@ export function DatePlannerDrawer({
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="auth-input-base text-xs"
+                    className="date2-input-base text-xs"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="date-planner-time"
-                    className="mb-1 block text-[11px] font-medium text-brand-muted"
+                    className="mb-1 block text-[11px] font-bold text-date2-slate"
                   >
                     Preferred Time
                   </label>
@@ -316,13 +316,13 @@ export function DatePlannerDrawer({
                     type="time"
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
-                    className="auth-input-base text-xs"
+                    className="date2-input-base text-xs"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="date-planner-duration"
-                    className="mb-1 block text-[11px] font-medium text-brand-muted"
+                    className="mb-1 block text-[11px] font-bold text-date2-slate"
                   >
                     Duration
                   </label>
@@ -330,7 +330,7 @@ export function DatePlannerDrawer({
                     id="date-planner-duration"
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
-                    className="auth-input-base text-xs"
+                    className="date2-input-base text-xs"
                   >
                     <option value="1–2 hours">1–2 hours</option>
                     <option value="2–3 hours">2–3 hours</option>
@@ -351,18 +351,18 @@ export function DatePlannerDrawer({
 
           {/* Generated Itinerary Cards */}
           {items.length > 0 && (
-            <div className="space-y-4 border-t border-brand-border pt-5">
+            <div className="space-y-4 border-t border-date2-border pt-5">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-bold text-brand-ink">
+                  <h3 className="text-sm font-bold text-date2-ink">
                     {planTitle}
                   </h3>
-                  <p className="text-xs text-brand-muted">
+                  <p className="text-xs text-date2-slate">
                     Review, edit, or accept stops before sharing to chat.
                   </p>
                 </div>
                 {isMock && (
-                  <span className="rounded-full border border-brand-border bg-brand-canvas px-2.5 py-0.5 text-[10px] font-semibold text-brand-muted">
+                  <span className="rounded-full border border-date2-border bg-date2-canvas px-2.5 py-0.5 text-[10px] font-bold text-date2-slate">
                     Simulated Plan
                   </span>
                 )}
@@ -376,10 +376,10 @@ export function DatePlannerDrawer({
                   return (
                     <div
                       key={item.id}
-                      className={`rounded-2xl border p-4 transition-colors space-y-3 ${
+                      className={`space-y-3 rounded-2xl border p-4 transition-colors ${
                         isAccepted
-                          ? "border-brand-forest bg-brand-ice/45"
-                          : "border-brand-border bg-white"
+                          ? "border-date2-violet bg-date2-lavenderMist/60"
+                          : "border-date2-border bg-date2-white"
                       }`}
                     >
                       {isEditing ? (
@@ -395,7 +395,7 @@ export function DatePlannerDrawer({
                               )
                             }
                             aria-label="Activity name"
-                            className="auth-input-base text-xs font-semibold"
+                            className="date2-input-base text-xs font-bold"
                           />
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             <input
@@ -409,7 +409,7 @@ export function DatePlannerDrawer({
                                 )
                               }
                               aria-label="Activity location"
-                              className="auth-input-base text-xs"
+                              className="date2-input-base text-xs"
                             />
                             <input
                               type="text"
@@ -422,7 +422,7 @@ export function DatePlannerDrawer({
                                 )
                               }
                               aria-label="Suggested time"
-                              className="auth-input-base text-xs"
+                              className="date2-input-base text-xs"
                             />
                           </div>
                           <textarea
@@ -436,12 +436,12 @@ export function DatePlannerDrawer({
                               )
                             }
                             aria-label="Activity description"
-                            className="auth-input-base text-xs"
+                            className="date2-input-base text-xs"
                           />
                           <button
                             type="button"
                             onClick={() => setEditingItemId(null)}
-                            className="rounded-xl bg-brand-forest px-3 py-1.5 text-xs font-semibold text-white"
+                            className="rounded-xl bg-date2-midnight px-3 py-1.5 text-xs font-bold text-date2-white"
                           >
                             Done Editing
                           </button>
@@ -450,21 +450,21 @@ export function DatePlannerDrawer({
                         <>
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <h4 className="text-sm font-bold text-brand-ink">
+                              <h4 className="text-sm font-bold text-date2-ink">
                                 {item.activityName}
                               </h4>
-                              <p className="mt-0.5 text-xs font-medium text-brand-forest">
+                              <p className="mt-0.5 text-xs font-bold text-date2-deepIndigo">
                                 {item.location} · {item.suggestedTime}
                               </p>
                             </div>
                             {item.estimatedBudget && (
-                              <span className="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-brand-muted border border-brand-border">
+                              <span className="shrink-0 rounded-full border border-date2-border bg-date2-white px-2.5 py-0.5 text-[11px] font-bold text-date2-slate">
                                 {item.estimatedBudget}
                               </span>
                             )}
                           </div>
 
-                          <p className="text-xs leading-relaxed text-brand-muted">
+                          <p className="text-xs leading-relaxed text-date2-slate">
                             {item.description}
                           </p>
 
@@ -472,10 +472,10 @@ export function DatePlannerDrawer({
                             <button
                               type="button"
                               onClick={() => toggleAccepted(item.id)}
-                              className={`flex-1 rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+                              className={`flex-1 rounded-xl px-3 py-1.5 text-xs font-bold transition-colors ${
                                 isAccepted
-                                  ? "bg-brand-forest text-white"
-                                  : "border border-brand-border bg-white text-brand-forest hover:bg-brand-ice"
+                                  ? "bg-date2-midnight text-date2-white"
+                                  : "border border-date2-border bg-date2-white text-date2-midnight hover:bg-date2-lavenderMist"
                               }`}
                             >
                               {isAccepted ? "Accepted ✓" : "Accept"}
@@ -483,7 +483,7 @@ export function DatePlannerDrawer({
                             <button
                               type="button"
                               onClick={() => setEditingItemId(item.id)}
-                              className="rounded-xl border border-brand-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-ink hover:bg-brand-canvas"
+                              className="rounded-xl border border-date2-border bg-date2-white px-3 py-1.5 text-xs font-bold text-date2-ink hover:bg-date2-canvas"
                             >
                               Edit
                             </button>
@@ -498,7 +498,7 @@ export function DatePlannerDrawer({
               <button
                 type="button"
                 onClick={handleShareAccepted}
-                className="w-full rounded-xl bg-brand-forest px-4 py-3 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover"
+                className="w-full rounded-[14px] bg-date2-midnight px-4 py-3 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
               >
                 Share Accepted Itinerary to Chat
               </button>

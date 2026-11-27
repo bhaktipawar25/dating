@@ -136,7 +136,7 @@ export function OtpInputGroup({
     <div
       role="group"
       aria-label="Six-digit verification code"
-      className="grid grid-cols-6 gap-2 sm:gap-3"
+      className="grid grid-cols-6 gap-1.5 xs:gap-2 sm:gap-3"
     >
       {digits.map((digit, index) => (
         <input
@@ -157,7 +157,7 @@ export function OtpInputGroup({
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={(e) => handlePaste(index, e)}
           onFocus={(e) => e.currentTarget.select()}
-          className={`h-12 w-full rounded-[14px] border bg-date2-white text-center font-helvetica text-lg font-bold tracking-wider text-date2-ink transition-all duration-150 focus:outline-none focus:ring-4 sm:h-14 sm:text-xl ${
+          className={`h-11 min-w-0 w-full rounded-[12px] border bg-date2-white text-center font-helvetica text-base font-bold tracking-wider text-date2-ink transition-all duration-150 focus:outline-none focus:ring-4 xs:h-12 xs:rounded-[14px] xs:text-lg sm:h-14 sm:text-xl ${
             hasError
               ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/15"
               : digit

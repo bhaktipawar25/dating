@@ -62,7 +62,7 @@ export function CompatibilityQuizGame({
               type="button"
               disabled={alreadySubmitted}
               onClick={() => setSelectedOptionId(option.id)}
-              className={`rounded-[16px] border p-4 text-left text-sm font-bold transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed ${
+              className={`min-h-[52px] rounded-[16px] border p-3.5 text-left text-sm font-bold transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed sm:p-4 ${
                 isSelected
                   ? "border-date2-midnight bg-date2-midnight text-date2-white shadow-indigoSoft"
                   : "border-date2-border bg-date2-white text-date2-ink hover:border-date2-violet hover:bg-date2-canvas"
@@ -89,7 +89,7 @@ export function CompatibilityQuizGame({
           type="button"
           disabled={!selectedOptionId || alreadySubmitted}
           onClick={handleSubmit}
-          className="h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:cursor-not-allowed disabled:opacity-55"
+          className="min-h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 py-2.5 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:cursor-not-allowed disabled:opacity-55"
         >
           Confirm Choice
         </button>

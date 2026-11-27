@@ -10,6 +10,12 @@ import {
   simulateMockBackendKycApproval,
 } from "@/services/security/mockSecurityService";
 import {
+  STORAGE_KEYS,
+  getSecurityProgress,
+  subscribeToStorageKey,
+  updateSecurityProgress,
+} from "@/lib/storage/localStorageManager";
+import {
   SecurityServiceError,
   securityService,
   type KycOverallStatus,
@@ -81,6 +87,7 @@ export function SecurityStatusView() {
   const [loading, setLoading] = useState(true);
   const [isSimulating, setIsSimulating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stagesExpanded, setStagesExpanded] = useState(false);
 
   const fetchStatus = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -103,7 +110,18 @@ export function SecurityStatusView() {
   useEffect(() => {
     const controller = new AbortController();
     void fetchStatus(controller.signal);
-    return () => controller.abort();
+
+    setStagesExpanded(getSecurityProgress().stagesReferenceExpanded);
+    updateSecurityProgress({ lastVisitedStep: "status" });
+
+    const unsub = subscribeToStorageKey(STORAGE_KEYS.SECURITY_PROGRESS, () => {
+      setStagesExpanded(getSecurityProgress().stagesReferenceExpanded);
+    });
+
+    return () => {
+      controller.abort();
+      unsub();
+    };
   }, [fetchStatus]);
 
   const handleSimulateApproval = async () => {
@@ -286,26 +304,42 @@ export function SecurityStatusView() {
 
       {/* Status Reference List */}
       <div className="space-y-3 rounded-[16px] border border-date2-border bg-date2-canvas p-4">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.11em] text-date2-muted">
-          Verification Stages
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {ALL_STATUS_STEPS.map((step) => {
-            const active = step.key === currentOverall;
-            return (
-              <div
-                key={step.key}
-                className={`rounded-xl border px-3 py-1.5 text-xs ${
-                  active
-                    ? "border-date2-violet bg-date2-white font-bold text-date2-midnight shadow-sm"
-                    : "border-date2-border bg-date2-white/60 text-date2-slate"
-                }`}
-              >
-                {step.title}
-              </div>
-            );
-          })}
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.11em] text-date2-muted">
+            Verification Stages
+          </h3>
+          <button
+            type="button"
+            aria-expanded={stagesExpanded}
+            onClick={() => {
+              const next = !stagesExpanded;
+              setStagesExpanded(next);
+              updateSecurityProgress({ stagesReferenceExpanded: next });
+            }}
+            className="text-xs font-bold text-date2-deepIndigo hover:text-date2-violet hover:underline"
+          >
+            {stagesExpanded ? "Hide stages" : "Show stages"}
+          </button>
         </div>
+        {stagesExpanded && (
+          <div className="flex flex-wrap gap-2">
+            {ALL_STATUS_STEPS.map((step) => {
+              const active = step.key === currentOverall;
+              return (
+                <div
+                  key={step.key}
+                  className={`rounded-xl border px-3 py-1.5 text-xs ${
+                    active
+                      ? "border-date2-violet bg-date2-white font-bold text-date2-midnight shadow-sm"
+                      : "border-date2-border bg-date2-white/60 text-date2-slate"
+                  }`}
+                >
+                  {step.title}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Primary Navigation Actions */}

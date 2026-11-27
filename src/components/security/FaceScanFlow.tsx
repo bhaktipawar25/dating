@@ -6,6 +6,12 @@ import { StatusBanner } from "@/components/auth/StatusBanner";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useWebcam } from "@/hooks/useWebcam";
 import {
+  STORAGE_KEYS,
+  getSecurityProgress,
+  subscribeToStorageKey,
+  updateSecurityProgress,
+} from "@/lib/storage/localStorageManager";
+import {
   SecurityServiceError,
   securityService,
   type FaceScanSubmitResponse,
@@ -65,6 +71,15 @@ export function FaceScanFlow() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitResult, setSubmitResult] =
     useState<FaceScanSubmitResponse | null>(null);
+  const [checklistReviewed, setChecklistReviewed] = useState(false);
+
+  useEffect(() => {
+    setChecklistReviewed(getSecurityProgress().faceChecklistReviewed);
+    updateSecurityProgress({ lastVisitedStep: "face-scan" });
+    return subscribeToStorageKey(STORAGE_KEYS.SECURITY_PROGRESS, () => {
+      setChecklistReviewed(getSecurityProgress().faceChecklistReviewed);
+    });
+  }, []);
 
   // Manage volatile preview URL lifecycle
   useEffect(() => {
@@ -245,14 +260,14 @@ export function FaceScanFlow() {
           ) : (
             <Link
               href="/security-check/document-verification"
-              className="inline-flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-date2-midnight px-5 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+              className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-[14px] bg-date2-midnight px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
             >
               Proceed to Government ID
             </Link>
           )}
           <Link
             href="/security-check/status"
-            className="inline-flex h-[52px] flex-1 items-center justify-center rounded-[14px] border border-date2-softBorder bg-date2-white px-5 font-helvetica text-[15px] font-bold text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist/60"
+            className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-[14px] border border-date2-softBorder bg-date2-white px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist/60"
           >
             View Verification Status
           </Link>
@@ -627,7 +642,25 @@ export function FaceScanFlow() {
       </div>
 
       <div className="rounded-[16px] border border-date2-border bg-date2-white p-5">
-        <h3 className="text-sm font-bold text-date2-ink">Before You Begin</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-date2-ink">Before You Begin</h3>
+          <button
+            type="button"
+            aria-pressed={checklistReviewed}
+            onClick={() => {
+              const next = !checklistReviewed;
+              setChecklistReviewed(next);
+              updateSecurityProgress({ faceChecklistReviewed: next });
+            }}
+            className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+              checklistReviewed
+                ? "border-date2-violet bg-date2-lavenderMist text-date2-midnight"
+                : "border-date2-border bg-date2-canvas text-date2-slate hover:bg-date2-lavenderMist/60"
+            }`}
+          >
+            {checklistReviewed ? "Tips Reviewed ✓" : "Mark Tips Reviewed"}
+          </button>
+        </div>
         <ul className="mt-3 grid grid-cols-1 gap-2.5 text-xs text-date2-charcoal sm:grid-cols-3">
           <li className="rounded-xl border border-date2-border bg-date2-canvas px-3.5 py-2.5 font-bold">
             1. Find bright, even front lighting
@@ -652,7 +685,7 @@ export function FaceScanFlow() {
         </SubmitButton>
         <Link
           href="/security-check"
-          className="inline-flex h-[52px] w-full items-center justify-center rounded-[14px] border border-date2-softBorder bg-date2-white px-5 font-helvetica text-[15px] font-bold text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist/60"
+          className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[14px] border border-date2-softBorder bg-date2-white px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist/60"
         >
           Back to Security Check
         </Link>

@@ -97,7 +97,7 @@ export function InterestSelectionSection({
         <div>
           <h2
             id="interests-section-heading"
-            className="text-2xl font-bold tracking-tight text-date2-ink sm:text-[26px]"
+            className="text-xl font-bold tracking-tight text-date2-ink xs:text-2xl sm:text-[26px]"
           >
             What Do You Like?
           </h2>
@@ -240,7 +240,7 @@ export function InterestSelectionSection({
           {filteredCategories.map((category) => (
             <div
               key={category.id}
-              className="space-y-2.5 rounded-[16px] border border-date2-border bg-date2-canvas p-4"
+              className="space-y-2.5 rounded-[16px] border border-date2-border bg-date2-canvas p-3 sm:p-4"
             >
               <h3 className="text-[11px] font-bold uppercase tracking-[0.11em] text-date2-deepIndigo">
                 {category.name}
@@ -289,8 +289,8 @@ export function InterestSelectionSection({
       )}
 
       {/* Selected Interests Preview & Reordering */}
-      <div className="space-y-3 rounded-[18px] border border-date2-border bg-date2-surface p-4">
-        <div className="flex items-center justify-between gap-2">
+      <div className="space-y-3 rounded-[18px] border border-date2-border bg-date2-surface p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-date2-ink">
               Selected Interests ({selectedInterestIds.length})

@@ -24,22 +24,28 @@ export function OnboardingLayout({
   const progressPercent = Math.round((currentStep / ONBOARDING_STEPS.length) * 100);
 
   return (
-    <div className="date2-auth-backdrop relative flex min-h-screen flex-col px-4 py-6 font-helvetica text-date2-ink sm:px-6 sm:py-8 lg:px-10">
-      <header className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Link
-          href="/onboarding/personal-info"
-          className="inline-flex w-fit items-center gap-2.5 rounded-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
-        >
-          <Date2Logo height={24} showContainer={false} />
-          <span className="rounded-full border border-date2-paleLavender bg-date2-lavenderMist px-2.5 py-0.5 text-[11px] font-bold text-date2-midnight">
-            Personal Info
-          </span>
-        </Link>
+    <div className="date2-auth-backdrop relative flex min-h-screen flex-col px-3 py-4 font-helvetica text-date2-ink sm:px-6 sm:py-8 lg:px-10">
+      <header className="mx-auto flex w-full max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex w-full items-center justify-between gap-2 md:w-auto">
+          <Link
+            href="/onboarding/personal-info"
+            className="inline-flex w-fit items-center gap-2 rounded-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+          >
+            <Date2Logo height={24} showContainer={false} />
+            <span className="rounded-full border border-date2-paleLavender bg-date2-lavenderMist px-2.5 py-0.5 text-[11px] font-bold text-date2-midnight">
+              Personal Info
+            </span>
+          </Link>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="md:hidden">
+            <ProfileAccountMenu theme="date2" />
+          </div>
+        </div>
+
+        <div className="flex min-w-0 items-center justify-between gap-3">
           <ol
             aria-label="Profile onboarding progress"
-            className="flex flex-wrap items-center gap-1.5 rounded-[16px] border border-date2-border bg-date2-white/95 p-1.5 shadow-sm backdrop-blur-sm"
+            className="grid w-full grid-cols-2 gap-1 rounded-[16px] border border-date2-border bg-date2-white/95 p-1 shadow-sm backdrop-blur-sm xs:grid-cols-4 sm:flex sm:w-auto sm:p-1.5"
           >
             {ONBOARDING_STEPS.map((item) => {
               const isActive = item.step === currentStep;
@@ -48,7 +54,7 @@ export function OnboardingLayout({
                 <li
                   key={item.step}
                   aria-current={isActive ? "step" : undefined}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-colors ${
+                  className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-bold transition-colors sm:justify-start sm:gap-1.5 sm:px-3 sm:text-xs ${
                     isActive
                       ? "bg-date2-midnight text-date2-white shadow-sm"
                       : isDone
@@ -58,7 +64,7 @@ export function OnboardingLayout({
                 >
                   <span
                     aria-hidden="true"
-                    className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
                       isActive
                         ? "bg-date2-violet text-date2-white"
                         : isDone
@@ -68,19 +74,21 @@ export function OnboardingLayout({
                   >
                     {isDone ? "✓" : item.step}
                   </span>
-                  <span>{item.label}</span>
+                  <span className="truncate">{item.label}</span>
                 </li>
               );
             })}
           </ol>
 
-          <ProfileAccountMenu theme="date2" />
+          <div className="hidden md:block">
+            <ProfileAccountMenu theme="date2" />
+          </div>
         </div>
       </header>
 
       {/* Mobile / Compact Progress Bar */}
-      <div className="mx-auto mt-4 w-full max-w-6xl space-y-1.5">
-        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.11em] text-date2-deepIndigo">
+      <div className="mx-auto mt-3.5 w-full max-w-7xl space-y-1.5 sm:mt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-[0.11em] text-date2-deepIndigo">
           <span>
             Step {currentStep} of {ONBOARDING_STEPS.length}:{" "}
             {ONBOARDING_STEPS.find((s) => s.step === currentStep)?.label}
@@ -95,7 +103,7 @@ export function OnboardingLayout({
         </div>
       </div>
 
-      <main className="mx-auto my-6 w-full max-w-6xl flex-1 sm:my-7">
+      <main className="mx-auto my-5 w-full max-w-7xl flex-1 sm:my-7">
         {children}
       </main>
     </div>

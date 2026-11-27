@@ -184,7 +184,7 @@ export function GameSection({
 
   if (conversations.length === 0) {
     return (
-      <div className="mx-auto max-w-xl space-y-4 rounded-[26px] border border-date2-border bg-date2-white p-8 text-center font-helvetica shadow-indigoCard">
+      <div className="mx-auto max-w-xl space-y-4 rounded-[26px] border border-date2-border bg-date2-white p-6 text-center font-helvetica shadow-indigoCard sm:p-8">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-date2-lavenderMist text-date2-deepIndigo">
           <GameCardIcon id="trivia" />
         </div>
@@ -200,7 +200,7 @@ export function GameSection({
         <button
           type="button"
           onClick={onGoToMatch}
-          className="inline-flex h-[46px] items-center justify-center rounded-[14px] bg-date2-midnight px-6 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
+          className="inline-flex min-h-[46px] items-center justify-center rounded-[14px] bg-date2-midnight px-6 py-2.5 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
         >
           Discover Matches
         </button>
@@ -211,7 +211,7 @@ export function GameSection({
   // Active Game Session View
   if (activeGame && activePartnerConversation) {
     return (
-      <div className="mx-auto max-w-2xl space-y-5 font-helvetica">
+      <div className="mx-auto max-w-3xl space-y-5 font-helvetica">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-date2-border bg-date2-white px-5 py-3.5 shadow-indigoSoft">
           <div>
             <p className="text-xs font-bold text-date2-slate">
@@ -270,7 +270,7 @@ export function GameSection({
           />
         )}
 
-        <div className="rounded-[24px] border border-date2-border bg-date2-white p-6 shadow-indigoCard sm:p-8">
+        <div className="rounded-[24px] border border-date2-border bg-date2-white p-4 shadow-indigoCard xs:p-6 sm:p-8">
           {!sessionState ? (
             <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
               <div className="h-7 w-7 animate-spin rounded-full border-2 border-date2-paleLavender border-t-date2-midnight" />
@@ -307,7 +307,7 @@ export function GameSection({
                 <button
                   type="button"
                   onClick={() => onReturnToChat(activePartnerConversation.id)}
-                  className="h-[48px] flex-1 rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
+                  className="min-h-[48px] flex-1 rounded-[14px] bg-date2-midnight px-4 py-2.5 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
                 >
                   Return to Chat
                 </button>
@@ -317,7 +317,7 @@ export function GameSection({
                     notifiedCompletionRef.current = null;
                     socketRef.current?.restartGame();
                   }}
-                  className="h-[48px] flex-1 rounded-[14px] border border-date2-softBorder bg-date2-white px-4 text-sm font-bold text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist"
+                  className="min-h-[48px] flex-1 rounded-[14px] border border-date2-softBorder bg-date2-white px-4 py-2.5 text-sm font-bold text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist"
                 >
                   Play Again
                 </button>
@@ -431,7 +431,7 @@ export function GameSection({
 
       {/* Game Catalog Grid */}
       {loadingCatalog ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
           {[1, 2, 3].map((n) => (
             <div
               key={n}
@@ -440,7 +440,7 @@ export function GameSection({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
           {catalog.map((game) => (
             <div
               key={game.id}
@@ -471,7 +471,7 @@ export function GameSection({
               <button
                 type="button"
                 onClick={() => handleStartGame(game)}
-                className="mt-6 h-[46px] w-full rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+                className="mt-6 min-h-[46px] w-full rounded-[14px] bg-date2-midnight px-4 py-2.5 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
               >
                 Play {game.name}
               </button>

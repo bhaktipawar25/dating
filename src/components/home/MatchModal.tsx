@@ -84,14 +84,14 @@ export function MatchModal({
           <button
             type="button"
             onClick={() => onStartChat(match.conversationId)}
-            className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] bg-date2-limeMark px-5 text-sm font-bold text-date2-midnight shadow-indigoSoft transition-colors hover:bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-date2-limeMark px-5 py-2.5 text-sm font-bold text-date2-midnight shadow-indigoSoft transition-colors hover:bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
           >
             <span>Send a Message</span>
           </button>
           <button
             type="button"
             onClick={onContinue}
-            className="inline-flex h-[48px] w-full items-center justify-center rounded-[14px] border border-date2-paleLavender/40 bg-date2-white/10 px-5 text-sm font-bold text-date2-white transition-colors hover:bg-date2-white/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+            className="inline-flex min-h-[46px] w-full items-center justify-center rounded-[14px] border border-date2-paleLavender/40 bg-date2-white/10 px-5 py-2.5 text-sm font-bold text-date2-white transition-colors hover:bg-date2-white/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
           >
             Keep Swiping
           </button>

@@ -228,9 +228,9 @@ export function PersonalInfoOnboarding({ user }: PersonalInfoOnboardingProps) {
 
   return (
     <OnboardingLayout currentStep={step}>
-      <div className="grid grid-cols-1 gap-6 font-helvetica lg:grid-cols-12 lg:items-start lg:gap-8">
+      <div className="grid grid-cols-1 gap-5 font-helvetica sm:gap-6 lg:grid-cols-12 lg:items-start lg:gap-8">
         {/* Main Step Card */}
-        <div className="rounded-[24px] border border-date2-border bg-date2-white p-5 shadow-indigoCard sm:p-8 lg:col-span-7">
+        <div className="min-w-0 rounded-[22px] border border-date2-border bg-date2-white p-3.5 shadow-indigoCard xs:p-4 sm:rounded-[24px] sm:p-8 lg:col-span-7">
           {submitError && (
             <div className="mb-5">
               <StatusBanner variant="error" message={submitError} />
@@ -457,7 +457,7 @@ export function PersonalInfoOnboarding({ user }: PersonalInfoOnboardingProps) {
         </div>
 
         {/* Live Profile Preview Sidebar */}
-        <div className="lg:col-span-5">
+        <div className="min-w-0 lg:col-span-5">
           <ProfilePreviewCard
             username={user?.username}
             sex={sex}

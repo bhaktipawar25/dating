@@ -2,6 +2,16 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StatusBanner } from "@/components/auth/StatusBanner";
+import { registerLogoutCleanup } from "@/lib/auth/sessionCleanup";
+import {
+  STORAGE_KEYS,
+  getChatDraft,
+  getHomeUiState,
+  removeChatDraft,
+  setChatDraft,
+  subscribeToStorageKey,
+  updateHomeUiState,
+} from "@/lib/storage/localStorageManager";
 import type {
   ChatConnectionStatus,
   ChatConversation,
@@ -123,6 +133,46 @@ export function ChatSection({
   }, [activeConversation, isVanishActive]);
 
   useEffect(() => {
+    setAiPanelOpen(getHomeUiState().aiPanelOpen);
+    const unsubHome = subscribeToStorageKey(STORAGE_KEYS.HOME_STATE, () => {
+      setAiPanelOpen(getHomeUiState().aiPanelOpen);
+    });
+    const unsubLogout = registerLogoutCleanup(() => {
+      setDraft("");
+      setDraftError(null);
+      setSearchQuery("");
+      setAiPanelOpen(false);
+      setDatePlannerOpen(false);
+      setMobileShowThread(false);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    });
+    return () => {
+      unsubHome();
+      unsubLogout();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeConversation) {
+      setDraft("");
+      return;
+    }
+
+    if (isVanishActive) {
+      // Never persist temporary Vanish Mode drafts or messages in Local Storage
+      removeChatDraft(activeConversation.id);
+      setDraft("");
+      return;
+    }
+
+    setDraft(getChatDraft(activeConversation.id));
+
+    return subscribeToStorageKey(STORAGE_KEYS.CHAT_DRAFTS, () => {
+      setDraft(getChatDraft(activeConversation.id));
+    });
+  }, [activeConversation, isVanishActive]);
+
+  useEffect(() => {
     if (selectedConversationId) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
@@ -168,6 +218,7 @@ export function ChatSection({
       isEphemeral: isVanishActive,
     });
     if (sent) {
+      removeChatDraft(activeConversation.id);
       setDraft("");
       onTypingChange(activeConversation.id, false);
       if (typingTimeoutRef.current) {
@@ -181,6 +232,12 @@ export function ChatSection({
     if (draftError && next.trim()) setDraftError(null);
 
     if (!activeConversation) return;
+    if (isVanishActive) {
+      removeChatDraft(activeConversation.id);
+    } else {
+      setChatDraft(activeConversation.id, next);
+    }
+
     onTypingChange(activeConversation.id, next.trim().length > 0);
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -233,11 +290,11 @@ export function ChatSection({
         />
       )}
 
-      <div className="grid min-h-[580px] grid-cols-1 overflow-hidden rounded-3xl border border-date2-border bg-date2-white font-helvetica shadow-card lg:grid-cols-12">
+      <div className="grid grid-cols-1 overflow-hidden rounded-3xl border border-date2-border bg-date2-white font-helvetica shadow-card md:h-[calc(100dvh-14rem)] md:min-h-[540px] md:max-h-[760px] md:grid-cols-12">
         {/* LEFT SIDE: Conversation Sidebar */}
         <aside
-          className={`flex flex-col border-b border-date2-border lg:col-span-3 lg:border-b-0 lg:border-r ${
-            mobileShowThread ? "hidden lg:flex" : "flex"
+          className={`flex min-h-0 flex-col border-b border-date2-border md:col-span-5 md:border-b-0 md:border-r lg:col-span-4 xl:col-span-3 ${
+            mobileShowThread ? "hidden md:flex" : "flex min-h-[460px] md:min-h-0"
           }`}
         >
           <div className="space-y-3 border-b border-date2-border p-4">
@@ -360,8 +417,10 @@ export function ChatSection({
 
         {/* CENTER/RIGHT: Active Conversation + Optional AI Assistant Sidebar */}
         <div
-          className={`flex flex-col lg:flex-row lg:col-span-9 ${
-            mobileShowThread ? "flex" : "hidden lg:flex"
+          className={`min-h-0 flex-col md:col-span-7 md:flex-row lg:col-span-8 lg:flex-row xl:col-span-9 ${
+            mobileShowThread
+              ? "fixed inset-0 z-40 flex h-[100dvh] bg-date2-white md:static md:z-auto md:h-auto"
+              : "hidden md:flex"
           }`}
         >
           {!activeConversation ? (
@@ -389,25 +448,25 @@ export function ChatSection({
           ) : (
             <>
               <section
-                className={`flex min-w-0 flex-1 flex-col transition-colors duration-200 ${
+                className={`flex min-h-0 min-w-0 flex-1 flex-col transition-colors duration-200 ${
                   isVanishActive ? "bg-[#10122E] text-white" : "bg-date2-white"
                 }`}
               >
                 {/* Active Conversation Header + Feature 5 Tools */}
                 <header
-                  className={`flex flex-col gap-3 border-b px-4 py-3.5 sm:px-5 ${
+                  className={`flex shrink-0 flex-col gap-2.5 border-b px-3 py-3 xs:px-4 sm:gap-3 sm:px-5 sm:py-3.5 ${
                     isVanishActive
                       ? "border-white/15 bg-[#161942]"
                       : "border-date2-border bg-date2-white"
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex items-center justify-between gap-2.5 sm:gap-3">
+                    <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                       <button
                         type="button"
                         onClick={() => setMobileShowThread(false)}
                         aria-label="Back to conversations"
-                        className={`rounded-lg border p-1.5 lg:hidden ${
+                        className={`rounded-lg border p-1.5 md:hidden ${
                           isVanishActive
                             ? "border-white/25 text-date2-paleLavender hover:bg-white/10"
                             : "border-date2-border text-date2-midnight hover:bg-date2-lavenderMist"
@@ -482,7 +541,11 @@ export function ChatSection({
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setAiPanelOpen((prev) => !prev)}
+                      onClick={() => {
+                        const next = !aiPanelOpen;
+                        setAiPanelOpen(next);
+                        updateHomeUiState({ aiPanelOpen: next });
+                      }}
                       aria-expanded={aiPanelOpen}
                       className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors ${
                         aiPanelOpen
@@ -593,7 +656,7 @@ export function ChatSection({
                         }
                       : undefined
                   }
-                  className={`flex-1 space-y-3 overflow-y-auto p-4 sm:p-5 ${
+                  className={`min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 xs:p-4 sm:p-5 ${
                     isVanishActive
                       ? "select-none bg-[#10122E]"
                       : "bg-date2-canvas/60"
@@ -760,7 +823,7 @@ export function ChatSection({
 
                 {/* Composer */}
                 <div
-                  className={`border-t p-3 sm:p-4 ${
+                  className={`shrink-0 border-t px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] xs:px-4 sm:p-4 ${
                     isVanishActive
                       ? "border-white/15 bg-[#161942]"
                       : "border-date2-border bg-date2-white"
@@ -791,7 +854,7 @@ export function ChatSection({
                           : `Message ${activeConversation.participant.name}... (Enter to send, Shift+Enter for new line)`
                       }
                       aria-label="Message input"
-                      className={`max-h-28 min-h-[42px] flex-1 resize-none rounded-xl border px-3.5 py-2.5 text-sm transition-colors focus:outline-none focus:ring-4 ${
+                      className={`max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border px-3.5 py-2.5 text-base transition-colors focus:outline-none focus:ring-4 sm:text-sm ${
                         isVanishActive
                           ? "border-white/20 bg-[#10122E] text-white placeholder:text-date2-paleLavender/65 focus:border-date2-softPeriwinkle focus:ring-date2-softPeriwinkle/25"
                           : "border-date2-border bg-date2-white text-date2-ink placeholder:text-date2-muted focus:border-date2-violet focus:ring-date2-paleLavender"
@@ -814,15 +877,21 @@ export function ChatSection({
 
               {/* Collapsible Right-hand AI Assistant Sidebar */}
               {aiPanelOpen && (
-                <div className="w-full lg:w-72 xl:w-80 shrink-0">
+                <div className="max-h-[42dvh] w-full shrink-0 overflow-hidden lg:h-full lg:max-h-none lg:w-72 xl:w-80">
                   <AiAssistantPanel
                     conversation={activeConversation}
                     currentUserId={currentUserId}
                     onInsertSuggestion={(text) => {
                       setDraft(text);
                       setDraftError(null);
+                      if (activeConversation && !isVanishActive) {
+                        setChatDraft(activeConversation.id, text);
+                      }
                     }}
-                    onClose={() => setAiPanelOpen(false)}
+                    onClose={() => {
+                      setAiPanelOpen(false);
+                      updateHomeUiState({ aiPanelOpen: false });
+                    }}
                   />
                 </div>
               )}

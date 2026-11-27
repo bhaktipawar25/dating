@@ -63,7 +63,7 @@ export function TriviaGame({ session, onSubmitAnswer }: TriviaGameProps) {
               type="button"
               disabled={alreadySubmitted}
               onClick={() => setSelectedOptionId(option.id)}
-              className={`rounded-[16px] border p-4 text-left text-sm font-bold transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed ${
+              className={`min-h-[52px] rounded-[16px] border p-3.5 text-left text-sm font-bold transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed sm:p-4 ${
                 isCorrectChoice
                   ? "border-date2-indigo bg-date2-lavenderMist text-date2-midnight"
                   : isSelected
@@ -100,7 +100,7 @@ export function TriviaGame({ session, onSubmitAnswer }: TriviaGameProps) {
           type="button"
           disabled={!selectedOptionId || alreadySubmitted}
           onClick={handleSubmit}
-          className="h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:cursor-not-allowed disabled:opacity-55"
+          className="min-h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 py-2.5 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:cursor-not-allowed disabled:opacity-55"
         >
           Submit Answer
         </button>

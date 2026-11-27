@@ -336,19 +336,19 @@ export function VideoCallOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={`Video call with ${call.partnerName}`}
-      className="fixed inset-0 z-50 flex flex-col bg-[#0F2A27] text-white"
+      className="fixed inset-0 z-50 flex flex-col bg-[#0B0D24] font-helvetica text-white"
     >
       {/* Top Status Bar */}
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-3 xs:px-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
           <ProfileAvatar
             name={call.partnerName}
             photoUrl={call.partnerPhotoUrl}
             size="sm"
           />
-          <div>
-            <p className="text-sm font-bold">{call.partnerName}</p>
-            <p className="text-xs text-brand-seafoam">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold">{call.partnerName}</p>
+            <p className="truncate text-xs text-date2-paleLavender">
               {connectionLabel}
               {durationSeconds > 0 ? ` · ${formatDuration(durationSeconds)}` : ""}
             </p>
@@ -358,14 +358,14 @@ export function VideoCallOverlay({
         <button
           type="button"
           onClick={handleBlockAndEnd}
-          className="rounded-xl border border-rose-400/50 bg-rose-950/60 px-3 py-1.5 text-xs font-semibold text-rose-200 transition-colors hover:bg-rose-900"
+          className="shrink-0 rounded-xl border border-rose-400/50 bg-rose-950/60 px-3 py-1.5 text-xs font-bold text-rose-200 transition-colors hover:bg-rose-900"
         >
           Block &amp; End
         </button>
       </div>
 
       {/* Main Video Stage */}
-      <div ref={stageRef} className="relative flex-1 overflow-hidden p-4">
+      <div ref={stageRef} className="relative min-h-0 flex-1 overflow-hidden p-3 xs:p-4 sm:p-6">
         {permissionError && (
           <div className="mx-auto mb-3 max-w-md">
             <StatusBanner variant="error" message={permissionError} />
@@ -373,7 +373,7 @@ export function VideoCallOverlay({
         )}
 
         {/* Remote Participant Video */}
-        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-3xl border border-white/15 bg-brand-forest/70">
+        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-3xl border border-white/15 bg-date2-midnight/85">
           <video
             ref={remoteVideoRef}
             autoPlay
@@ -391,7 +391,7 @@ export function VideoCallOverlay({
                 size="lg"
               />
               <p className="text-base font-bold">{call.partnerName}</p>
-              <p className="max-w-xs text-xs text-brand-seafoam/90">
+              <p className="max-w-xs text-xs text-date2-paleLavender/90">
                 {call.isMock
                   ? "Local WebRTC camera preview active. Connect the Date² signaling backend to stream remote participant video."
                   : connectionLabel}
@@ -408,7 +408,7 @@ export function VideoCallOverlay({
           onPointerCancel={handlePipPointerUp}
           style={{ right: `${pipPos.x}px`, bottom: `${pipPos.y}px` }}
           title="Drag to move local video window"
-          className="absolute z-20 h-32 w-44 cursor-grab overflow-hidden rounded-2xl border-2 border-brand-mint/70 bg-brand-ink shadow-card select-none touch-none active:cursor-grabbing sm:h-36 sm:w-48"
+          className="absolute z-20 h-28 w-24 cursor-grab touch-none select-none overflow-hidden rounded-2xl border-2 border-date2-softPeriwinkle/80 bg-date2-ink shadow-indigoCard active:cursor-grabbing xs:h-32 xs:w-36 sm:h-36 sm:w-48"
         >
           <video
             ref={localVideoRef}
@@ -420,18 +420,18 @@ export function VideoCallOverlay({
             }`}
           />
           {(cameraOff || permissionError) && (
-            <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-brand-seafoam">
+            <div className="flex h-full w-full items-center justify-center px-2 text-center text-xs font-bold text-date2-paleLavender">
               Camera Off
             </div>
           )}
-          <span className="absolute bottom-1.5 left-2 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+          <span className="absolute bottom-1.5 left-2 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-bold text-white">
             You {micMuted ? "(Muted)" : ""}
           </span>
         </div>
       </div>
 
       {/* Bottom Call Controls */}
-      <div className="flex items-center justify-center gap-4 border-t border-white/10 bg-black/25 px-4 py-4">
+      <div className="flex flex-wrap items-center justify-center gap-2.5 border-t border-white/10 bg-black/30 px-4 pt-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] sm:gap-4 sm:py-4">
         <button
           type="button"
           onClick={toggleMic}

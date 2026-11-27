@@ -111,7 +111,7 @@ export function SexSelectionSection({
       <div>
         <h2
           id="sex-section-heading"
-          className="text-2xl font-bold tracking-tight text-date2-ink sm:text-[26px]"
+          className="text-xl font-bold tracking-tight text-date2-ink xs:text-2xl sm:text-[26px]"
         >
           Tell Us About Yourself
         </h2>
@@ -124,7 +124,7 @@ export function SexSelectionSection({
       <div
         role="radiogroup"
         aria-label="Select your sex"
-        className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+        className="grid grid-cols-2 gap-2.5 xs:gap-3 sm:grid-cols-4"
       >
         {SEX_OPTIONS.map((option, index) => {
           const isSelected = value === option.id;
@@ -137,7 +137,7 @@ export function SexSelectionSection({
               disabled={disabled}
               onClick={() => onChange(option.id)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className={`group flex min-h-[118px] flex-col items-center justify-center gap-2.5 rounded-[18px] border p-4 text-center transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`group flex min-h-[100px] flex-col items-center justify-center gap-2 rounded-[16px] border p-3 text-center transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[118px] sm:gap-2.5 sm:rounded-[18px] sm:p-4 ${
                 isSelected
                   ? "border-date2-violet bg-date2-lavenderMist shadow-indigoSoft ring-2 ring-date2-paleLavender"
                   : "border-date2-border bg-date2-white hover:border-date2-lightPeriwinkle hover:bg-date2-canvas"

@@ -17,6 +17,7 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -29,6 +30,7 @@
       radial-gradient(circle at 88% 82%, rgba(79, 212, 196, 0.24) 0%, transparent 48%),
       linear-gradient(145deg, #f8fcfc 0%, #ebf7f7 52%, #dff3f1 100%);
     min-height: 100vh;
+    overflow-x: clip;
   }
 }
 
@@ -39,7 +41,7 @@
   }
 
   .date2-input-base {
-    @apply w-full rounded-[14px] border border-date2-border bg-date2-white px-4 py-3 font-helvetica text-sm font-normal text-date2-ink placeholder:text-date2-muted/75 transition-all duration-150 focus:border-date2-violet focus:outline-none focus:ring-4 focus:ring-date2-paleLavender/70 disabled:cursor-not-allowed disabled:bg-date2-surface disabled:text-date2-slate disabled:opacity-75;
+    @apply w-full rounded-[14px] border border-date2-border bg-date2-white px-4 py-3 font-helvetica text-base font-normal text-date2-ink placeholder:text-date2-muted/75 transition-all duration-150 focus:border-date2-violet focus:outline-none focus:ring-4 focus:ring-date2-paleLavender/70 disabled:cursor-not-allowed disabled:bg-date2-surface disabled:text-date2-slate disabled:opacity-75 sm:text-sm;
   }
 
   .date2-auth-backdrop {

@@ -104,12 +104,12 @@ export function AiAssistantPanel({
   return (
     <aside
       aria-label="AI Assistant"
-      className="flex flex-col border-t border-brand-border bg-brand-canvas/65 lg:border-l lg:border-t-0"
+      className="flex h-full flex-col border-t border-date2-border bg-date2-canvas/85 font-helvetica lg:border-l lg:border-t-0"
     >
-      <div className="flex items-start justify-between gap-2 border-b border-brand-border/70 bg-white px-4 py-3.5">
+      <div className="flex shrink-0 items-start justify-between gap-2 border-b border-date2-border bg-date2-white px-4 py-3.5">
         <div>
-          <h3 className="text-sm font-bold text-brand-ink">AI Assistant</h3>
-          <p className="mt-0.5 text-xs text-brand-muted">
+          <h3 className="text-sm font-bold text-date2-ink">AI Assistant</h3>
+          <p className="mt-0.5 text-xs text-date2-slate">
             Get personalized icebreakers or reply ideas for{" "}
             {conversation.participant.name}.
           </p>
@@ -118,13 +118,13 @@ export function AiAssistantPanel({
           type="button"
           aria-label="Close AI Assistant"
           onClick={onClose}
-          className="rounded-lg border border-brand-border px-2 py-1 text-xs font-semibold text-brand-muted hover:bg-brand-ice hover:text-brand-ink"
+          className="rounded-lg border border-date2-border px-2 py-1 text-xs font-semibold text-date2-slate hover:bg-date2-lavenderMist hover:text-date2-ink"
         >
           ×
         </button>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -132,8 +132,8 @@ export function AiAssistantPanel({
             onClick={() => fetchSuggestions("icebreakers")}
             className={`rounded-xl px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-60 ${
               mode === "icebreakers"
-                ? "bg-brand-forest text-white shadow-sm"
-                : "border border-brand-border bg-white text-brand-forest hover:bg-brand-ice"
+                ? "bg-date2-midnight text-date2-white shadow-sm"
+                : "border border-date2-border bg-date2-white text-date2-midnight hover:bg-date2-lavenderMist"
             }`}
           >
             Generate Icebreakers
@@ -144,8 +144,8 @@ export function AiAssistantPanel({
             onClick={() => fetchSuggestions("replies")}
             className={`rounded-xl px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-60 ${
               mode === "replies"
-                ? "bg-brand-forest text-white shadow-sm"
-                : "border border-brand-border bg-white text-brand-forest hover:bg-brand-ice"
+                ? "bg-date2-midnight text-date2-white shadow-sm"
+                : "border border-date2-border bg-date2-white text-date2-midnight hover:bg-date2-lavenderMist"
             }`}
           >
             Suggest Replies
@@ -153,7 +153,7 @@ export function AiAssistantPanel({
         </div>
 
         {isMock && suggestions.length > 0 && (
-          <p className="rounded-xl border border-brand-border bg-white px-3 py-2 text-[11px] text-brand-muted">
+          <p className="rounded-xl border border-date2-border bg-date2-white px-3 py-2 text-[11px] text-date2-slate">
             Simulated AI suggestions for local UI testing. Review and edit
             before sending manually.
           </p>
@@ -179,18 +179,18 @@ export function AiAssistantPanel({
 
         {loading ? (
           <div className="space-y-2.5" aria-live="polite">
-            <p className="text-xs font-medium text-brand-muted">
+            <p className="text-xs font-medium text-date2-slate">
               Generating suggestions...
             </p>
             {[1, 2, 3].map((n) => (
               <div
                 key={n}
-                className="h-20 animate-pulse rounded-2xl border border-brand-border bg-white"
+                className="h-20 animate-pulse rounded-2xl border border-date2-border bg-date2-white"
               />
             ))}
           </div>
         ) : suggestions.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-brand-border bg-white/80 p-4 text-center text-xs text-brand-muted">
+          <div className="rounded-2xl border border-dashed border-date2-border bg-date2-white/90 p-4 text-center text-xs text-date2-slate">
             Choose <strong>Generate Icebreakers</strong> or{" "}
             <strong>Suggest Replies</strong> above to insert a tailored draft
             into your message box.
@@ -202,14 +202,14 @@ export function AiAssistantPanel({
               return (
                 <div
                   key={suggestion.id}
-                  className="rounded-2xl border border-brand-border bg-white p-3.5 shadow-sm space-y-2.5"
+                  className="space-y-2.5 rounded-2xl border border-date2-border bg-date2-white p-3.5 shadow-sm"
                 >
                   {suggestion.category && (
-                    <span className="inline-block rounded-full bg-brand-ice px-2.5 py-0.5 text-[10px] font-semibold text-brand-forest">
+                    <span className="inline-block rounded-full bg-date2-lavenderMist px-2.5 py-0.5 text-[10px] font-bold text-date2-deepIndigo">
                       {suggestion.category}
                     </span>
                   )}
-                  <p className="text-xs leading-relaxed text-brand-ink">
+                  <p className="text-xs leading-relaxed text-date2-ink">
                     {suggestion.text}
                   </p>
                   <button
@@ -220,8 +220,8 @@ export function AiAssistantPanel({
                     }}
                     className={`w-full rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
                       wasInserted
-                        ? "bg-brand-ice text-brand-forest border border-brand-mint"
-                        : "bg-brand-forest text-white hover:bg-brand-forestHover"
+                        ? "border border-date2-violet bg-date2-lavenderMist text-date2-midnight"
+                        : "bg-date2-midnight text-date2-white hover:bg-date2-deepIndigo"
                     }`}
                   >
                     {wasInserted ? "Inserted into message box" : "Insert Draft"}

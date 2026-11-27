@@ -100,7 +100,7 @@ export function ProfileAccountMenu({
             aria-hidden="true"
             viewBox="0 0 20 20"
             fill="currentColor"
-            className={`h-4 w-4 text-brand-muted transition-transform ${
+            className={`h-4 w-4 text-date2-slate transition-transform ${
               menuOpen ? "rotate-180" : ""
             }`}
           >
@@ -116,12 +116,12 @@ export function ProfileAccountMenu({
           <div
             role="menu"
             aria-label="Account menu"
-            className="absolute right-0 z-40 mt-2 w-56 rounded-2xl border border-brand-border bg-white p-1.5 shadow-card"
+            className="absolute right-0 z-40 mt-2 w-56 max-w-[calc(100vw-2rem)] rounded-2xl border border-date2-border bg-date2-white p-1.5 font-helvetica shadow-indigoCard"
           >
             {username && (
-              <div className="border-b border-brand-border/70 px-3 py-2">
-                <p className="text-[11px] text-brand-muted">Signed in as</p>
-                <p className="truncate text-xs font-bold text-brand-ink">
+              <div className="border-b border-date2-border px-3 py-2">
+                <p className="text-[11px] text-date2-slate">Signed in as</p>
+                <p className="truncate text-xs font-bold text-date2-ink">
                   @{username}
                 </p>
               </div>
@@ -133,7 +133,7 @@ export function ProfileAccountMenu({
                   href="/home"
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
-                  className="block rounded-xl px-3 py-2 text-xs font-semibold text-brand-ink transition-colors hover:bg-brand-ice"
+                  className="block rounded-xl px-3 py-2 text-xs font-bold text-date2-ink transition-colors hover:bg-date2-lavenderMist"
                 >
                   Home Dashboard
                 </Link>
@@ -142,7 +142,7 @@ export function ProfileAccountMenu({
                 href="/onboarding/personal-info"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="block rounded-xl px-3 py-2 text-xs font-semibold text-brand-ink transition-colors hover:bg-brand-ice"
+                className="block rounded-xl px-3 py-2 text-xs font-bold text-date2-ink transition-colors hover:bg-date2-lavenderMist"
               >
                 Profile &amp; Preferences
               </Link>
@@ -150,13 +150,13 @@ export function ProfileAccountMenu({
                 href="/security-check/status"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="block rounded-xl px-3 py-2 text-xs font-semibold text-brand-ink transition-colors hover:bg-brand-ice"
+                className="block rounded-xl px-3 py-2 text-xs font-bold text-date2-ink transition-colors hover:bg-date2-lavenderMist"
               >
                 Account Verification Status
               </Link>
             </div>
 
-            <div className="border-t border-brand-border/70 pt-1">
+            <div className="border-t border-date2-border pt-1">
               <button
                 type="button"
                 role="menuitem"
@@ -165,7 +165,7 @@ export function ProfileAccountMenu({
                   setLogoutError(null);
                   setConfirmOpen(true);
                 }}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-50"
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-bold text-rose-700 transition-colors hover:bg-rose-50"
               >
                 <span>Logout</span>
                 <svg
@@ -197,17 +197,17 @@ export function ProfileAccountMenu({
           role="dialog"
           aria-modal="true"
           aria-labelledby="logout-confirm-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-brand-forest/45 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-date2-midnight/55 p-4 font-helvetica backdrop-blur-sm"
         >
-          <div className="w-full max-w-sm rounded-3xl border border-brand-border bg-white p-6 shadow-card space-y-4">
+          <div className="w-full max-w-sm space-y-4 rounded-[24px] border border-date2-border bg-date2-white p-6 shadow-indigoCard">
             <div>
               <h2
                 id="logout-confirm-title"
-                className="text-lg font-bold text-brand-ink"
+                className="text-lg font-bold text-date2-ink"
               >
                 Are you sure you want to log out?
               </h2>
-              <p className="mt-1 text-xs leading-relaxed text-brand-muted">
+              <p className="mt-1 text-xs leading-relaxed text-date2-slate">
                 Your session will end, active chats and calls will close, and
                 any temporary Vanish Mode messages will be cleared.
               </p>
@@ -222,7 +222,7 @@ export function ProfileAccountMenu({
                 type="button"
                 disabled={isLoggingOut}
                 onClick={() => setConfirmOpen(false)}
-                className="flex-1 rounded-xl border border-brand-border bg-brand-ice/70 px-4 py-2.5 text-sm font-semibold text-brand-forest transition-colors hover:bg-brand-frost disabled:opacity-50"
+                className="flex-1 rounded-[14px] border border-date2-softBorder bg-date2-canvas px-4 py-2.5 text-sm font-bold text-date2-ink transition-colors hover:bg-date2-lavenderMist disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -230,7 +230,7 @@ export function ProfileAccountMenu({
                 type="button"
                 disabled={isLoggingOut}
                 onClick={handleConfirmLogout}
-                className="flex-1 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-rose-700 disabled:opacity-60"
+                className="flex-1 rounded-[14px] bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-soft transition-colors hover:bg-rose-700 disabled:opacity-60"
               >
                 {isLoggingOut ? "Logging out..." : "Logout"}
               </button>

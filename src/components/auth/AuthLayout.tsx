@@ -1,7 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  STORAGE_KEYS,
+  getUiPreferences,
+  subscribeToStorageKey,
+  updateUiPreferences,
+} from "@/lib/storage/localStorageManager";
 import { Date2Logo } from "./Date2Logo";
 
 interface AuthLayoutProps {
@@ -20,10 +26,19 @@ export function AuthLayout({
   footer,
   backHref = "/welcome",
 }: AuthLayoutProps) {
+  const [mobileHighlightsOpen, setMobileHighlightsOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileHighlightsOpen(getUiPreferences().authSafetyInfoExpanded);
+    return subscribeToStorageKey(STORAGE_KEYS.UI_PREFERENCES, () => {
+      setMobileHighlightsOpen(getUiPreferences().authSafetyInfoExpanded);
+    });
+  }, []);
+
   return (
-    <div className="date2-auth-backdrop relative flex min-h-screen flex-col px-4 py-6 font-helvetica text-date2-ink sm:px-6 sm:py-8 lg:px-10">
+    <div className="date2-auth-backdrop relative flex min-h-screen flex-col px-3 py-5 font-helvetica text-date2-ink xs:px-4 sm:px-6 sm:py-8 lg:px-10">
       {/* Top Bar */}
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {backHref && (
             <Link
@@ -63,8 +78,8 @@ export function AuthLayout({
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto my-6 flex w-full max-w-5xl flex-1 items-center justify-center sm:my-8">
-        <div className="grid w-full items-center gap-8 lg:grid-cols-12 lg:gap-12">
+      <main className="mx-auto my-5 flex w-full max-w-6xl flex-1 items-center justify-center sm:my-8">
+        <div className="grid w-full items-center gap-6 md:gap-8 lg:grid-cols-12 lg:gap-12">
           {/* Desktop Brand Panel mirroring Date² Welcome Hero */}
           <aside className="hidden lg:col-span-5 lg:flex lg:flex-col">
             <div className="overflow-hidden rounded-[24px] border border-date2-border bg-date2-white p-8 shadow-indigoCard">
@@ -136,12 +151,12 @@ export function AuthLayout({
           {/* Primary Auth Card */}
           <section
             aria-labelledby="auth-page-title"
-            className="mx-auto w-full max-w-md lg:col-span-7 lg:max-w-lg"
+            className="mx-auto w-full max-w-md md:max-w-lg lg:col-span-7"
           >
-            <div className="rounded-[24px] border border-date2-border bg-date2-white p-6 shadow-indigoCard sm:p-8">
+            <div className="rounded-[24px] border border-date2-border bg-date2-white p-4 shadow-indigoCard xs:p-6 sm:p-8">
               <h1
                 id="auth-page-title"
-                className="font-helvetica text-2xl font-bold tracking-tight text-date2-ink sm:text-[28px]"
+                className="font-helvetica text-xl font-bold tracking-tight text-date2-ink xs:text-2xl sm:text-[28px]"
               >
                 {title}
               </h1>
@@ -156,6 +171,43 @@ export function AuthLayout({
                   {footer}
                 </div>
               )}
+
+              {/* Mobile expandable Date² community safety highlights (persisted in Local Storage) */}
+              <div className="mt-5 border-t border-date2-border pt-4 lg:hidden">
+                <button
+                  type="button"
+                  aria-expanded={mobileHighlightsOpen}
+                  onClick={() => {
+                    const next = !mobileHighlightsOpen;
+                    setMobileHighlightsOpen(next);
+                    updateUiPreferences({ authSafetyInfoExpanded: next });
+                  }}
+                  className="flex w-full items-center justify-between gap-2 rounded-xl border border-date2-border bg-date2-canvas px-3.5 py-2.5 text-xs font-bold text-date2-midnight transition-colors hover:bg-date2-lavenderMist"
+                >
+                  <span>Why Date² Verification &amp; Privacy</span>
+                  <span aria-hidden="true">
+                    {mobileHighlightsOpen ? "Hide −" : "Learn more +"}
+                  </span>
+                </button>
+                {mobileHighlightsOpen && (
+                  <div className="mt-2.5 space-y-2 rounded-xl border border-date2-border bg-date2-surface p-3.5 text-xs leading-relaxed text-date2-slate">
+                    <p>
+                      <strong className="text-date2-ink">
+                        Verified Community:
+                      </strong>{" "}
+                      Biometric liveness checks and Government ID verification
+                      keep profiles authentic.
+                    </p>
+                    <p>
+                      <strong className="text-date2-ink">
+                        Private Sessions:
+                      </strong>{" "}
+                      Authentication sessions are stored securely on the backend,
+                      never in browser Local Storage.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         </div>

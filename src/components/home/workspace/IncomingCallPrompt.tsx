@@ -31,11 +31,11 @@ export function IncomingCallPrompt({
       role="dialog"
       aria-modal="true"
       aria-labelledby="incoming-vc-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-brand-forest/55 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-date2-midnight/60 p-4 font-helvetica backdrop-blur-sm"
     >
-      <div className="w-full max-w-sm rounded-3xl border border-brand-border bg-white p-6 text-center shadow-card space-y-5">
+      <div className="w-full max-w-sm space-y-5 rounded-[26px] border border-date2-border bg-date2-white p-6 text-center shadow-indigoCard">
         <div className="flex flex-col items-center gap-3">
-          <div className="rounded-full ring-4 ring-brand-mint/40">
+          <div className="rounded-full ring-4 ring-date2-paleLavender">
             <ProfileAvatar
               name={call.callerName}
               photoUrl={call.callerPhotoUrl}
@@ -43,16 +43,16 @@ export function IncomingCallPrompt({
             />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-brand-forest">
+            <p className="text-xs font-bold uppercase tracking-wider text-date2-deepIndigo">
               Incoming Video Call
             </p>
             <h2
               id="incoming-vc-title"
-              className="mt-1 text-xl font-bold text-brand-ink"
+              className="mt-1 text-xl font-bold text-date2-ink"
             >
               {call.callerName}
             </h2>
-            <p className="mt-1 text-xs text-brand-muted">
+            <p className="mt-1 text-xs text-date2-slate">
               Accept to enable your camera and microphone for this call.
             </p>
           </div>
@@ -63,7 +63,7 @@ export function IncomingCallPrompt({
             type="button"
             disabled={busy}
             onClick={() => onDecline(call)}
-            className="flex-1 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50"
+            className="flex-1 rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50"
           >
             Decline
           </button>
@@ -71,7 +71,7 @@ export function IncomingCallPrompt({
             type="button"
             disabled={busy}
             onClick={() => onAccept(call)}
-            className="flex-1 rounded-xl bg-brand-forest px-4 py-3 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-brand-forestHover disabled:opacity-50"
+            className="flex-1 rounded-[14px] bg-date2-midnight px-4 py-3 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:opacity-50"
           >
             Accept
           </button>

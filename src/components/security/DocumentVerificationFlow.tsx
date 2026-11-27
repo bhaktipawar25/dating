@@ -15,6 +15,7 @@ import {
   type DocumentQualityFeedback,
 } from "@/lib/security/documentQuality";
 import { formatFileSize } from "@/lib/security/fileValidation";
+import { updateSecurityProgress } from "@/lib/storage/localStorageManager";
 import {
   SecurityServiceError,
   securityService,
@@ -86,6 +87,10 @@ export function DocumentVerificationFlow() {
     () => COUNTRIES.find((c) => c.code === countryCode)?.name ?? countryCode,
     [countryCode]
   );
+
+  useEffect(() => {
+    updateSecurityProgress({ lastVisitedStep: "document-verification" });
+  }, []);
 
   // Run volatile in-memory quality check whenever entering Stage 4
   useEffect(() => {
@@ -290,7 +295,7 @@ export function DocumentVerificationFlow() {
           {isVerified ? (
             <Link
               href="/onboarding/personal-info"
-              className="inline-flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-date2-midnight px-5 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
+              className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-[14px] bg-date2-midnight px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
             >
               Continue to Personal Information
             </Link>
@@ -307,7 +312,7 @@ export function DocumentVerificationFlow() {
           ) : (
             <Link
               href="/security-check/status"
-              className="inline-flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-date2-midnight px-5 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
+              className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-[14px] bg-date2-midnight px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
             >
               View Verification Status
             </Link>
@@ -315,7 +320,7 @@ export function DocumentVerificationFlow() {
 
           <Link
             href="/security-check"
-            className="inline-flex h-[52px] flex-1 items-center justify-center rounded-[14px] border border-date2-softBorder bg-date2-white px-5 font-helvetica text-[15px] font-bold text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist/60"
+            className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-[14px] border border-date2-softBorder bg-date2-white px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-ink transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist/60"
           >
             Back to Security Check
           </Link>
@@ -631,18 +636,18 @@ export function DocumentVerificationFlow() {
                 </span>
               </div>
             )}
-            <div className="border-t border-date2-border pt-3 flex items-center justify-between gap-2">
-              <span className="text-date2-slate">Front Side</span>
-              <span className="truncate font-bold text-date2-ink">
+            <div className="border-t border-date2-border pt-3 flex items-center justify-between gap-3">
+              <span className="shrink-0 text-date2-slate">Front Side</span>
+              <span className="min-w-0 flex-1 truncate text-right font-bold text-date2-ink">
                 {frontFile
                   ? `${frontFile.name} (${formatFileSize(frontFile.size)})`
                   : "Not attached"}
               </span>
             </div>
             {selectedDocConfig.requiresBackSide && (
-              <div className="border-t border-date2-border pt-3 flex items-center justify-between gap-2">
-                <span className="text-date2-slate">Back Side</span>
-                <span className="truncate font-bold text-date2-ink">
+              <div className="border-t border-date2-border pt-3 flex items-center justify-between gap-3">
+                <span className="shrink-0 text-date2-slate">Back Side</span>
+                <span className="min-w-0 flex-1 truncate text-right font-bold text-date2-ink">
                   {backFile
                     ? `${backFile.name} (${formatFileSize(backFile.size)})`
                     : "Not attached"}

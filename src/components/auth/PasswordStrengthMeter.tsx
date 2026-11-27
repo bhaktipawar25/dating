@@ -1,6 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import {
+  STORAGE_KEYS,
+  getUiPreferences,
+  subscribeToStorageKey,
+  updateUiPreferences,
+} from "@/lib/storage/localStorageManager";
 import {
   PASSWORD_MIN_LENGTH,
   evaluatePasswordStrength,
@@ -27,6 +33,15 @@ const SCORE_TEXT_COLORS: Record<number, string> = {
 };
 
 export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) {
+  const [showChecklist, setShowChecklist] = useState(true);
+
+  useEffect(() => {
+    setShowChecklist(getUiPreferences().showPasswordChecklist);
+    return subscribeToStorageKey(STORAGE_KEYS.UI_PREFERENCES, () => {
+      setShowChecklist(getUiPreferences().showPasswordChecklist);
+    });
+  }, []);
+
   const { score, label, criteria } = evaluatePasswordStrength(password);
 
   if (!password) {
@@ -61,9 +76,23 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
       className="mt-2.5 rounded-[14px] border border-date2-border bg-date2-surface p-3.5 font-helvetica"
       aria-live="polite"
     >
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex items-center justify-between gap-2 text-xs">
         <span className="font-bold text-date2-charcoal">Password Strength</span>
-        <span className={`font-bold ${SCORE_TEXT_COLORS[score]}`}>{label}</span>
+        <div className="flex items-center gap-2">
+          <span className={`font-bold ${SCORE_TEXT_COLORS[score]}`}>{label}</span>
+          <button
+            type="button"
+            aria-expanded={showChecklist}
+            onClick={() => {
+              const next = !showChecklist;
+              setShowChecklist(next);
+              updateUiPreferences({ showPasswordChecklist: next });
+            }}
+            className="text-[11px] font-bold text-date2-deepIndigo underline underline-offset-2 hover:text-date2-violet"
+          >
+            {showChecklist ? "Hide rules" : "Show rules"}
+          </button>
+        </div>
       </div>
 
       <div className="mt-2 grid grid-cols-4 gap-1.5" role="presentation">
@@ -80,30 +109,32 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
         })}
       </div>
 
-      <ul className="mt-3 space-y-1.5 text-xs">
-        {rules.map((rule) => (
-          <li
-            key={rule.key}
-            className={`flex items-center gap-2 ${
-              rule.met
-                ? "font-bold text-date2-deepIndigo"
-                : "text-date2-slate"
-            }`}
-          >
-            <span
-              aria-hidden="true"
-              className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+      {showChecklist && (
+        <ul className="mt-3 space-y-1.5 text-xs">
+          {rules.map((rule) => (
+            <li
+              key={rule.key}
+              className={`flex items-center gap-2 ${
                 rule.met
-                  ? "bg-date2-violet text-date2-white"
-                  : "border border-date2-softBorder bg-date2-white text-transparent"
+                  ? "font-bold text-date2-deepIndigo"
+                  : "text-date2-slate"
               }`}
             >
-              ✓
-            </span>
-            <span>{rule.text}</span>
-          </li>
-        ))}
-      </ul>
+              <span
+                aria-hidden="true"
+                className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                  rule.met
+                    ? "bg-date2-violet text-date2-white"
+                    : "border border-date2-softBorder bg-date2-white text-transparent"
+                }`}
+              >
+                ✓
+              </span>
+              <span>{rule.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

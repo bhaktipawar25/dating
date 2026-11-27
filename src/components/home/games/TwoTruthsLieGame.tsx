@@ -138,7 +138,7 @@ export function TwoTruthsLieGame({
         <button
           type="submit"
           disabled={submitted}
-          className="h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:opacity-55"
+          className="min-h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 py-2.5 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:opacity-55"
         >
           Send Statements
         </button>
@@ -191,7 +191,7 @@ export function TwoTruthsLieGame({
           type="button"
           disabled={selectedGuess === null || submitted}
           onClick={handleGuess}
-          className="h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:opacity-55"
+          className="min-h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 py-2.5 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo disabled:opacity-55"
         >
           Lock In Guess
         </button>
@@ -257,7 +257,7 @@ export function TwoTruthsLieGame({
           <button
             type="button"
             onClick={onNextStep}
-            className="h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
+            className="min-h-[48px] w-full rounded-[14px] bg-date2-midnight px-4 py-2.5 text-sm font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo"
           >
             Continue to {session.partnerName}&apos;s Turn
           </button>

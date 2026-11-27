@@ -24,7 +24,7 @@ export function SubmitButton({
   const isDisabled = disabled || isLoading;
 
   const baseStyles =
-    "inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[14px] px-5 font-helvetica text-[15px] font-bold transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-center font-helvetica text-sm font-bold leading-snug transition-all duration-150 focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[52px] sm:px-5 sm:text-[15px]";
 
   const variantStyles =
     variant === "primary"

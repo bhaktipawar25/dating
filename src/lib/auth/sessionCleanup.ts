@@ -1,3 +1,5 @@
+import { clearUserScopedStorage } from "@/lib/storage/localStorageManager";
+
 type CleanupCallback = () => void;
 
 const cleanupCallbacks = new Set<CleanupCallback>();
@@ -14,6 +16,9 @@ export function registerLogoutCleanup(callback: CleanupCallback): () => void {
 }
 
 export function runAllLogoutCleanups(): void {
+  // Always clear user-scoped Local Storage drafts, home tab/selection, and KYC view state
+  clearUserScopedStorage();
+
   for (const callback of Array.from(cleanupCallbacks)) {
     try {
       callback();

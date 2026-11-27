@@ -115,7 +115,7 @@ export function ResetPasswordForm({
 
         <Link
           href={loginHref}
-          className="inline-flex h-[52px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+          className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 py-3 text-center font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
         >
           Go to Log In
         </Link>

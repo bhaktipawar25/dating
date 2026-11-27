@@ -3,6 +3,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { StatusBanner } from "@/components/auth/StatusBanner";
+import {
+  STORAGE_KEYS,
+  getSecurityProgress,
+  subscribeToStorageKey,
+  updateSecurityProgress,
+  type SecurityStepKey,
+} from "@/lib/storage/localStorageManager";
 import { authService } from "@/services/auth/authService";
 import {
   SecurityServiceError,
@@ -17,6 +24,9 @@ export function SecurityOverview() {
   const [emailVerified, setEmailVerified] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [privacyNoticeExpanded, setPrivacyNoticeExpanded] = useState(true);
+  const [lastVisitedStep, setLastVisitedStep] =
+    useState<SecurityStepKey>("overview");
 
   const loadStatus = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -46,7 +56,22 @@ export function SecurityOverview() {
   useEffect(() => {
     const controller = new AbortController();
     void loadStatus(controller.signal);
-    return () => controller.abort();
+
+    const saved = getSecurityProgress();
+    setPrivacyNoticeExpanded(saved.privacyNoticeExpanded);
+    setLastVisitedStep(saved.lastVisitedStep);
+    updateSecurityProgress({ visitedSteps: ["overview"] });
+
+    const unsub = subscribeToStorageKey(STORAGE_KEYS.SECURITY_PROGRESS, () => {
+      const next = getSecurityProgress();
+      setPrivacyNoticeExpanded(next.privacyNoticeExpanded);
+      setLastVisitedStep(next.lastVisitedStep);
+    });
+
+    return () => {
+      controller.abort();
+      unsub();
+    };
   }, [loadStatus]);
 
   const faceStatus = statusData?.faceScan.status ?? "NOT_STARTED";
@@ -287,84 +312,133 @@ export function SecurityOverview() {
       </div>
 
       {/* Strict Biometric Privacy & Camera Permission Card matching Flutter */}
-      <div className="divide-y divide-date2-border rounded-[16px] border border-date2-border bg-date2-surface p-4 text-xs">
-        <div className="flex items-start gap-3 pb-3.5">
-          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-date2-white text-date2-deepIndigo">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="h-4 w-4"
-            >
-              <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z" />
-            </svg>
-          </span>
-          <div>
-            <p className="font-bold text-date2-ink">Strict Biometric Privacy</p>
-            <p className="mt-0.5 leading-relaxed text-date2-slate">
-              Camera frames are processed strictly in memory and never saved to
-              your browser storage or permanent gallery. Backend uploads
-              require transient verification over HTTPS without saving raw
-              selfies permanently.
-            </p>
-          </div>
+      <div className="rounded-[16px] border border-date2-border bg-date2-surface p-4 text-xs">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-bold text-date2-ink">
+            Strict Biometric Privacy &amp; Camera Notice
+          </p>
+          <button
+            type="button"
+            aria-expanded={privacyNoticeExpanded}
+            onClick={() => {
+              const next = !privacyNoticeExpanded;
+              setPrivacyNoticeExpanded(next);
+              updateSecurityProgress({ privacyNoticeExpanded: next });
+            }}
+            className="text-xs font-bold text-date2-deepIndigo hover:text-date2-violet hover:underline"
+          >
+            {privacyNoticeExpanded ? "Hide details" : "Show details"}
+          </button>
         </div>
 
-        <div className="flex items-start gap-3 pt-3.5">
-          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-date2-white text-date2-violet">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="h-4 w-4"
-            >
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-          </span>
-          <div>
-            <p className="font-bold text-date2-ink">
-              Camera Permission Needed Next
-            </p>
-            <p className="mt-0.5 leading-relaxed text-date2-slate">
-              On the next screen, we request camera access exclusively for
-              guided face scan and Government ID framing.
-            </p>
+        {privacyNoticeExpanded && (
+          <div className="mt-3 divide-y divide-date2-border border-t border-date2-border pt-3">
+            <div className="flex items-start gap-3 pb-3.5">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-date2-white text-date2-deepIndigo">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4"
+                >
+                  <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z" />
+                </svg>
+              </span>
+              <div>
+                <p className="font-bold text-date2-ink">
+                  Strict Biometric Privacy
+                </p>
+                <p className="mt-0.5 leading-relaxed text-date2-slate">
+                  Camera frames are processed strictly in memory and never saved
+                  to your browser storage or permanent gallery. Backend uploads
+                  require transient verification over HTTPS without saving raw
+                  selfies permanently.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 pt-3.5">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-date2-white text-date2-violet">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4"
+                >
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </span>
+              <div>
+                <p className="font-bold text-date2-ink">
+                  Camera Permission Needed Next
+                </p>
+                <p className="mt-0.5 leading-relaxed text-date2-slate">
+                  On the next screen, we request camera access exclusively for
+                  guided face scan and Government ID framing.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {lastVisitedStep !== "overview" && overallStatus !== "VERIFIED" && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-date2-paleLavender bg-date2-lavenderMist/60 px-4 py-2.5 text-xs">
+          <span className="font-bold text-date2-midnight">
+            Last viewed verification screen:{" "}
+            {lastVisitedStep === "face-scan"
+              ? "Live Face Scan"
+              : lastVisitedStep === "document-verification"
+                ? "Government ID Document"
+                : "Verification Status"}
+          </span>
+          <Link
+            href={
+              lastVisitedStep === "face-scan"
+                ? "/security-check/face-scan"
+                : lastVisitedStep === "document-verification"
+                  ? "/security-check/document-verification"
+                  : "/security-check/status"
+            }
+            className="font-bold text-date2-deepIndigo underline underline-offset-2 hover:text-date2-violet"
+          >
+            Resume screen →
+          </Link>
+        </div>
+      )}
 
       {/* Primary Action Buttons */}
       <div className="space-y-3">
         {overallStatus === "VERIFIED" ? (
           <Link
             href="/onboarding/personal-info"
-            className="inline-flex h-[52px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
           >
             Continue to Personal Information
           </Link>
         ) : isFaceDone && !isDocDone ? (
           <Link
             href="/security-check/document-verification"
-            className="inline-flex h-[52px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
           >
             Continue to Government ID
           </Link>
         ) : isFaceDone && isDocDone ? (
           <Link
             href="/security-check/status"
-            className="inline-flex h-[52px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
           >
             View Verification Status
           </Link>
         ) : (
           <Link
             href="/security-check/face-scan"
-            className="inline-flex h-[52px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-date2-midnight px-5 py-3 text-center font-helvetica text-[15px] font-bold leading-snug text-date2-white shadow-indigoSoft transition-colors hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
           >
             Start Live Face Scan
           </Link>

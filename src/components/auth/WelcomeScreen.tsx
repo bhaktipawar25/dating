@@ -71,10 +71,10 @@ const WELCOME_BENEFITS = [
  */
 export function WelcomeScreen() {
   return (
-    <div className="date2-auth-backdrop min-h-screen px-4 py-6 font-helvetica text-date2-ink sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-4xl flex-col">
+    <div className="date2-auth-backdrop min-h-screen px-3 py-5 font-helvetica text-date2-ink xs:px-4 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto flex w-full max-w-5xl flex-col xl:max-w-6xl">
         {/* Top Brand Header */}
-        <header className="flex flex-wrap items-center justify-between gap-4">
+        <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Date2Logo height={26} showContainer={false} />
             <span className="rounded-full border border-date2-paleLavender bg-date2-lavenderMist px-3 py-1 text-xs font-bold text-date2-midnight">
@@ -90,7 +90,7 @@ export function WelcomeScreen() {
         <main className="mt-8 grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
           {/* Hero Graphic Banner */}
           <div className="lg:col-span-5">
-            <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-date2-midnight via-date2-deepIndigo to-date2-violet p-8 text-center text-date2-white shadow-indigoCard">
+            <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-date2-midnight via-date2-deepIndigo to-date2-violet p-6 text-center text-date2-white shadow-indigoCard xs:p-8">
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-date2-softPeriwinkle/25 blur-2xl"
@@ -110,8 +110,8 @@ export function WelcomeScreen() {
           </div>
 
           {/* Copy + Value Pillars + CTAs */}
-          <div className="rounded-[26px] border border-date2-border bg-date2-white p-6 shadow-indigoCard sm:p-8 lg:col-span-7">
-            <h1 className="font-helvetica text-3xl font-bold leading-tight tracking-tight text-date2-ink sm:text-[34px]">
+          <div className="rounded-[26px] border border-date2-border bg-date2-white p-4 shadow-indigoCard xs:p-6 sm:p-8 lg:col-span-7">
+            <h1 className="font-helvetica text-2xl font-bold leading-tight tracking-tight text-date2-ink xs:text-3xl sm:text-[34px]">
               Meet someone who gets you.
             </h1>
             <p className="mt-2.5 text-sm leading-relaxed text-date2-slate sm:text-[15px]">
@@ -148,7 +148,7 @@ export function WelcomeScreen() {
             <div className="mt-7 space-y-3.5">
               <Link
                 href="/register"
-                className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-[14px] bg-date2-midnight px-6 font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-all hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
+                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-date2-midnight px-6 py-3 text-center font-helvetica text-[15px] font-bold text-date2-white shadow-indigoSoft transition-all hover:bg-date2-deepIndigo focus:outline-none focus-visible:ring-4 focus-visible:ring-date2-paleLavender"
               >
                 <span>Create Your Account</span>
                 <svg

@@ -34,9 +34,9 @@ export function ProfileVisibilitySection({
   return (
     <section
       aria-labelledby="profile-visibility-heading"
-      className="space-y-3.5 rounded-[18px] border border-date2-border bg-date2-surface p-4 font-helvetica sm:p-5"
+      className="space-y-3.5 rounded-[18px] border border-date2-border bg-date2-surface p-3 font-helvetica xs:p-3.5 sm:p-5"
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3
             id="profile-visibility-heading"
@@ -53,7 +53,7 @@ export function ProfileVisibilitySection({
           type="button"
           disabled={disabled || isSaving}
           onClick={onSaveChanges}
-          className="inline-flex shrink-0 items-center justify-center rounded-xl border border-date2-softBorder bg-date2-white px-3.5 py-2 text-xs font-bold text-date2-deepIndigo shadow-sm transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full shrink-0 items-center justify-center rounded-xl border border-date2-softBorder bg-date2-white px-3.5 py-2 text-xs font-bold text-date2-deepIndigo shadow-sm transition-colors hover:border-date2-violet hover:bg-date2-lavenderMist focus:outline-none focus-visible:ring-2 focus-visible:ring-date2-violet disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           {isSaving ? "Saving..." : "Save Changes"}
         </button>
@@ -72,15 +72,15 @@ export function ProfileVisibilitySection({
           return (
             <div
               key={setting.key}
-              className={`flex items-center justify-between gap-4 rounded-[14px] border p-3.5 transition-colors ${
+              className={`flex items-start justify-between gap-3 rounded-[14px] border p-3 transition-colors sm:items-center sm:gap-4 sm:p-3.5 ${
                 enabled
                   ? "border-date2-paleLavender bg-date2-white"
                   : "border-date2-border bg-date2-canvas"
               }`}
             >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-date2-ink">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <p className="text-sm font-bold leading-snug text-date2-ink">
                     {setting.label}
                   </p>
                   <span
@@ -93,7 +93,7 @@ export function ProfileVisibilitySection({
                     {enabled ? "Visible" : "Hidden"}
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs leading-relaxed text-date2-slate">
+                <p className="mt-1 text-xs leading-relaxed text-date2-slate">
                   {setting.description}
                 </p>
               </div>
